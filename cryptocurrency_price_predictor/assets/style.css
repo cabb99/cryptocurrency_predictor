@@ -82,8 +82,13 @@
 }
 
 .side-navigation.open {
-    width: 250px;
+    width: 300px;
 }
+
+.side-navigation h2 {
+    text-align: center;
+}
+
 
 .side-navigation a {
     padding: 8px 8px 8px 64px;
@@ -106,7 +111,7 @@
 }
 
 .container.open {
-    margin-left: 250px;
+    margin-left: 300px;
     margin-right: 0rem;
     padding: 0rem 0rem;
     transition: 0.5s;
@@ -151,7 +156,7 @@
 
 /* Change the color of links on hover */
 .header h1 a:hover {
-    color: var(--theme2);
+    color: darkgreen;
     transition: 0.3s;
 }
 
@@ -170,6 +175,20 @@
     color:var(--theme0);Heikin-Ashi candle
 }
 
+.footer a {
+    display: inline;
+    color: black;
+    padding: 0px 0px;
+    text-decoration: none;
+    /*font-size: 17px;*/
+    transition: 0.5s;
+}
+
+.footer a:hover {
+    color: darkgreen;
+    transition: 0.1s;
+}
+
 .placeholder {
     position: relative;
     display: inline-block;
@@ -177,9 +196,10 @@
     padding-bottom: 180px;
     height:auto;
     width:100%;
-    background-color: yellow;
+    background-color: #c2d8f8;
     text-align: center;
     vertical-align: middle;
+    border: 5px solid black;
 
 }
 

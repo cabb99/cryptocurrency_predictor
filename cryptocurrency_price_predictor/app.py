@@ -64,7 +64,7 @@ external_stylesheets = [
 
 ]
 
-theme = {"font-family": "Lobster",
+theme = {"font-family": "Arial",
          "background-color": "#e0e0e0"}
 
 app = Dash(name=app_name, server=server,
@@ -98,8 +98,8 @@ def create_sidebar():
                 [
                     dbc.NavLink([html.I(className="fas fa-home"), " Home"],
                                 href="/home", id="page-home-link", className="page-link"),
-                    dbc.NavLink([html.I(className="fas fa-chart-line"), " Real-time"],
-                                href="/real-time", id="page-1-link", className="page-link"),
+                    dbc.NavLink([html.I(className="fas fa-chart-line"), " Forecast"],
+                                href="/forecast", id="page-1-link", className="page-link"),
                     dbc.NavLink([html.I(className="fas fa-chart-bar"), " Historical"],
                                 href="/historical", id="page-2-link", className="page-link"),
                     dbc.NavLink([html.I(className="fas fa-microscope"), " Indicators"],
@@ -115,9 +115,9 @@ def create_sidebar():
                     dbc.NavLink([html.I(className="fas fa-code"), " Code"],
                                 href="/code", id="page-8-link", className="page-link"),
                     dbc.NavLink([html.I(className="fab fa-github"), " Github"],
-                                href="/page-9", id="page-9-link", className="page-link"),
+                                href="/github", id="page-9-link", className="page-link"),
                     dbc.NavLink([html.I(className="fas fa-users"), " Group"],
-                                href="/page-10", id="page-10-link", className="page-link"),
+                                href="/group", id="page-10-link", className="page-link"),
                 ],
                 vertical=True,
                 pills=True,
@@ -171,22 +171,160 @@ def create_footer():
     return footer
 
 
-def real_time():
-    content = html.Div(
-        [dcc.Dropdown(id='rt-coin', options=[
+def home():
+    content = html.Div([
+        html.H2('Overview'),
+        html.P("""Cryptocurrency is a burgeoning asset class with investors flocking to invest in all types of cryptos. 
+Bitcoin by itself has been the best performing asset in the past 10 years with an annualized return of 230%.
+1 bitcoin was valued at $1 in 2011 and now (2021) hovers in the $50,000 range, a whopping 5,000,000% increase."""),
+        html.Br(),
+        html.P("""As more and more people look to diversify their portfolio and have exposure to this new asset class,
+having a tool to give investors and speculators alike an idea of how crypto prices will move will be a tremendous 
+advantage."""),
+        html.Br(),
+        html.P("""Because cryptocurrency is still relatively new, it is difficult to determine what drives price 
+movement and volatility. Technical analysis alone would not be sufficient to predict price movement and it may not even 
+be the strongest determinant of price due to the lack of empirical evidence and history. In the example of Dogecoin, 
+price movement has been driven by tweets from Elon Musk and momentum investing with very little to-no fundamental 
+support. We want to provide a tool for people to use to make informed investment decisions when it comes to 
+cryptocurrencies.
+"""),
+    ])
+    return content
+
+def forecast():
+    content = html.Div([
+        html.H2('Price forecast'),
+        html.Div(
+        [html.H3('Coin forecast'),]+
+        [dcc.Dropdown(id='forecast-coin', options=[
             {'label': 'Bitcoin', 'value': 'BTC'},
             {'label': 'Ethereum', 'value': 'ETH'},
             {'label': 'Dogecoin', 'value': 'DOGE'}
-            ], value='BTC', placeholder='Select a cryptocurrency')] +
+        ], value='BTC', placeholder='Cryptocurrencies sorted by future gains')] +
         [html.Button(i) for i in ['All', '5Y', '1Y', '3M', '1M', '1W', '1D', '4H']] +
         [dcc.Dropdown(options=[
             {'label': 'Line', 'value': 'line'},
             {'label': 'Area', 'value': 'area'},
             {'label': 'Candle', 'value': 'candle'},
-            {'label': 'HA-Candle', 'value': 'candle'} # Heikin-Ashi Candles
+            {'label': 'HA-Candle', 'value': 'candle'}  # Heikin-Ashi Candles
         ], value='line', placeholder='Select a plot type')] +
-        [html.Div('text', className='placeholder')]
-    )
+        [html.Div('''Candle Chart plot of recent prices.
+        It includes dotted lines 3-14 days into the future for forecast''', className='placeholder')]
+    ), html.Div(
+            [html.H3('Forecast overview'),
+             html.Div('Barplot overview of forecasts for some coins', className='placeholder')]
+        )])
+    return content
+
+
+def historical():
+    content = html.Div([
+        html.H2('Historical prices'),
+        html.Hr(),
+        html.Div([
+            dcc.DatePickerRange(),
+            dcc.Dropdown(id='historical-coin', options=[
+                {'label': 'Bitcoin', 'value': 'BTC'},
+                {'label': 'Ethereum', 'value': 'ETH'},
+                {'label': 'Dogecoin', 'value': 'DOGE'}
+            ], value='BTC', placeholder='Select coin to compare history'),
+            html.Div('Historical Crypto Price Line Chart for Specific Dates', className='placeholder'),
+            html.Div('Historical Events aligned with above chart timeline (Hover to know event)', className='placeholder'),
+        ])
+    ])
+    return content
+
+
+def indicators():
+    content = html.Div([
+        html.H2('Indicators'),
+        html.Hr(),
+        html.Div([
+            html.Div('Correlation Matrix for each crypto with all indicators', className='placeholder')
+        ])
+    ])
+    return content
+
+def coins():
+    content = html.Div([
+        html.H2('Similarity of cryptocurrencies'),
+        html.Hr(),
+        html.Div([
+            html.Div('Correlation Matrix for cryptos vs other cryptos', className='placeholder')
+        ])
+    ])
+    return content
+
+
+def marketcap():
+    content = html.Div([
+        html.H2('Market Cap history'),
+        html.Hr(),
+        html.Div([
+            html.Div('Plot showing the percentage of the marketcap by coin', className='placeholder'),
+            dcc.Dropdown(id='marketcap-coin', options=[
+                {'label': 'Bitcoin', 'value': 'BTC'},
+                {'label': 'Ethereum', 'value': 'ETH'},
+                {'label': 'Dogecoin', 'value': 'DOGE'}
+            ], value='BTC', placeholder='Select coin to compare marketcaps'),
+            html.Div('Plot showing the beta risk of each coin by coin', className='placeholder'),
+        ])
+    ])
+    return content
+
+
+def sentiment():
+    content = html.Div([
+        html.H2('Sentiment analysis'),
+        html.Hr(),
+        html.Div([
+            dcc.Dropdown(id='sentiment-coin', options=[
+                {'label': 'Bitcoin', 'value': 'BTC'},
+                {'label': 'Ethereum', 'value': 'ETH'},
+                {'label': 'Dogecoin', 'value': 'DOGE'}
+            ], value='BTC', placeholder='Select coin to compare sentiment'),
+            html.Div('Google, Twitter, reddit trends', className='placeholder'),
+            html.Div('Tabular view of Twitter user ranking compared to each coin', className='placeholder'),
+            html.Div('Twitter live stream', className='placeholder'),
+            html.Div('Twitter word cloud for positive and negative sentiments', className='placeholder'),
+
+        ])
+    ])
+    return content
+
+
+def covid():
+    content = html.Div([
+        html.H2('Did COVID-19 influence the price of cryptocurrencies?'),
+        html.Hr(),
+        html.Div([
+            dcc.Dropdown(id='covid-coin', options=[
+                {'label': 'Bitcoin', 'value': 'BTC'},
+                {'label': 'Ethereum', 'value': 'ETH'},
+                {'label': 'Dogecoin', 'value': 'DOGE'}
+            ], value='BTC', placeholder='Select coin to compare to covid'),
+            html.Div('GeoMap of COVID Rates vs Coin Prices', className='placeholder'),
+            html.Div('Line Plot of selected Country Cases relative to selected crypto price', className='placeholder'),
+
+        ])
+    ])
+    return content
+
+
+def github():
+    content = html.Div("Link to Github page for this code")
+    return content
+
+
+def group():
+    content = html.Div([
+        html.H2('DS4A Empowerment Cohort 2: Team 151'),
+        html.Hr(),
+        html.Div([
+
+        ])
+    ])
     return content
 
 
@@ -345,15 +483,28 @@ app.layout = serve_layout
 
 @app.callback(Output("body", "children"), [Input("url", "pathname")])
 def render_page_content(pathname):
-    if pathname in ["/", "/code"]:
-        return create_scratch_content()
-    elif pathname == "/real-time":
-        return real_time()
+    if pathname in ["/", "/home"]:
+        return home()
+    elif pathname == "/forecast":
+        return forecast()
     elif pathname == "/historical":
-        return html.P("This is the content of page 2. Yay!")
+        return historical()
     elif pathname == "/indicators":
-        return html.P("Oh cool, this is page 3!")
-
+        return indicators()
+    elif pathname == "/coins":
+        return coins()
+    elif pathname == "/marketcap":
+        return marketcap()
+    elif pathname == "/sentiment":
+        return sentiment()
+    elif pathname == "/covid":
+        return covid()
+    elif pathname == "/code":
+        return create_scratch_content()
+    elif pathname == "/github":
+        return github()
+    elif pathname == "/group":
+        return group()
     # If the user tries to reach a different page, return a 404 message
     return dbc.Jumbotron(
         [

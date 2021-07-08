@@ -10,7 +10,7 @@ from flask import Flask
 from dash import Dash
 from dash.dependencies import Input, Output, State
 from dotenv import load_dotenv
-from exceptions import ImproperlyConfigured
+from .exceptions import ImproperlyConfigured
 
 pages = []
 

@@ -10,7 +10,10 @@ from flask import Flask
 from dash import Dash
 from dash.dependencies import Input, Output, State
 from dotenv import load_dotenv
-from .exceptions import ImproperlyConfigured
+try:
+    import exceptions
+except ImportError:
+    from . import exceptions
 
 pages = []
 
@@ -31,7 +34,7 @@ try:
     # py.sign_in(os.environ["PLOTLY_USERNAME"], os.environ["PLOTLY_API_KEY"])
     pass
 except KeyError:
-    raise ImproperlyConfigured("Plotly credentials not set in .env")
+    raise exceptions.ImproperlyConfigured("Plotly credentials not set in .env")
 
 app_name = "Cryptocurrency Price Predictor"
 server = Flask(app_name)
@@ -40,7 +43,7 @@ try:
     # server.secret_key = os.environ["SECRET_KEY"]
     pass
 except KeyError:
-    raise ImproperlyConfigured("SECRET KEY not set in .env:")
+    raise exceptions.ImproperlyConfigured("SECRET KEY not set in .env:")
 
 external_js = [
     "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML",  # Latex

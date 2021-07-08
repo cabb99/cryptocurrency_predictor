@@ -167,7 +167,20 @@
     padding: 2rem 1rem;
     transition: 0.5s;
     background-color: var(--theme3);
-    color:var(--theme0);
+    color:var(--theme0);Heikin-Ashi candle
+}
+
+.placeholder {
+    position: relative;
+    display: inline-block;
+    padding-top: 180px;
+    padding-bottom: 180px;
+    height:auto;
+    width:100%;
+    background-color: yellow;
+    text-align: center;
+    vertical-align: middle;
+
 }
 
 @media only screen and (min-width: 0px) {

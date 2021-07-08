@@ -51,7 +51,7 @@ external_css = [
 
     "https://codepen.io/chriddyp/pen/bWLwgP.css",  # Dash stylesheet
     "https://fonts.googleapis.com/css?family=Lobster|Raleway",  # Fonts
-    #"https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.3/css/fontawesome.min.css",  # Fonts
+    # "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.3/css/fontawesome.min.css",  # Fonts
     {
         'href': 'https://use.fontawesome.com/releases/v5.15.3/css/all.css',
         'rel': 'stylesheet',
@@ -74,9 +74,14 @@ app = Dash(name=app_name, server=server,
 
 
 def create_null(n):
+    """ Creates empty data containers.
+    Empty data containers can be used for headless callbacks.
+    They can also be used to store information on the client side"""
     return html.Div(children=[dcc.Store(id=f'null{i}', data=[]) for i in range(n)])
 
+
 def create_toggle():
+    """Creates the menu toggle button to open and close the menu"""
     button = html.A(className="toggle", id="toggleB",
                     children=[html.I(),
                               html.I(),
@@ -85,9 +90,10 @@ def create_toggle():
 
 
 def create_sidebar():
+    """Creates the navigation sidebar. It can open and close."""
     sidebar = html.Div(
         [
-            html.H2("Menu", className="menu-tittle", id='menuTittle'),
+            html.H2("Navigation", className="menu-tittle", id='menuTittle'),
             dbc.Nav(
                 [
                     dbc.NavLink([html.I(className="fas fa-home"), " Home"],
@@ -124,13 +130,69 @@ def create_sidebar():
 
 
 def create_header():
+    """Creates the header of the webpage.
+    It remains constant across different pages."""
     header = html.Header(
         children=[html.H1(children=html.A(app_name, href="/home"), id='headTittle')],
         id="head", className="header")
     return header
 
 
-def create_content():
+def create_footer():
+    """Creates the footer of the webpage.
+    It remains constant across different pages."""
+    p0 = html.P(
+        children=[
+            html.Span("Built with "),
+            html.A(
+                "Plotly Dash", href="https://github.com/plotly/dash", target="_blank"
+            ),
+        ]
+    )
+    p1 = html.P(
+        children=[
+            html.Span("Data from "),
+            html.A("some website", href="https://some-website.com/", target="_blank"),
+        ]
+    )
+    a_fa = html.A(
+        children=[
+            html.I([], className="fa fa-font-awesome fa-2x"), html.Span("Font Awesome")
+        ],
+        style={"textDecoration": "none"},
+        href="http://fontawesome.io/",
+        target="_blank",
+    )
+
+    div = html.Div([p0, p1, a_fa],
+                   id="foot",
+                   className="footer", )
+    footer = html.Footer(children=div)
+    return footer
+
+
+def real_time():
+    content = html.Div(
+        [dcc.Dropdown(id='rt-coin', options=[
+            {'label': 'Bitcoin', 'value': 'BTC'},
+            {'label': 'Ethereum', 'value': 'ETH'},
+            {'label': 'Dogecoin', 'value': 'DOGE'}
+            ], value='BTC', placeholder='Select a cryptocurrency')] +
+        [html.Button(i) for i in ['All', '5Y', '1Y', '3M', '1M', '1W', '1D', '4H']] +
+        [dcc.Dropdown(options=[
+            {'label': 'Line', 'value': 'line'},
+            {'label': 'Area', 'value': 'area'},
+            {'label': 'Candle', 'value': 'candle'},
+            {'label': 'HA-Candle', 'value': 'candle'} # Heikin-Ashi Candles
+        ], value='line', placeholder='Select a plot type')] +
+        [html.Div('text', className='placeholder')]
+    )
+    return content
+
+
+def create_scratch_content():
+    """ Creates scratch page content.
+    Treat this like a sandbox"""
     content = html.Div(
         children=[
             # range slider with start date and end date
@@ -159,32 +221,32 @@ def create_content():
                                 )
                      ),
                          html.ObjectEl(className='tableauViz',
-                                      id='viz1625607118381_object',
-                                      style={'display': 'none'},
-                                      children=[html.Param(name='host_url',
-                                                           value='https://public.tableau.com/'),
-                                                html.Param(name='embed_code_version',
-                                                           value='3'),
-                                                html.Param(name='path',
-                                                           value='shared/DX4J5S42B'),
-                                                html.Param(name='toolbar',
-                                                           value='yes'),
-                                                html.Param(name='static_image',
-                                                           value='https://public.tableau.com/static/images/Tw/Tweeter_test/Sheet1/1.png'),
-                                                html.Param(name='animate_transition',
-                                                           value='yes'),
-                                                html.Param(name='display_static_image',
-                                                           value='yes'),
-                                                html.Param(name='display_spinner',
-                                                           value='yes'),
-                                                html.Param(name='display_overlay',
-                                                           value='yes'),
-                                                html.Param(name='display_count',
-                                                           value='yes'),
-                                                html.Param(name='language',
-                                                           value='en-US'),
-                                                ]
-                                      )]),
+                                       id='viz1625607118381_object',
+                                       style={'display': 'none'},
+                                       children=[html.Param(name='host_url',
+                                                            value='https://public.tableau.com/'),
+                                                 html.Param(name='embed_code_version',
+                                                            value='3'),
+                                                 html.Param(name='path',
+                                                            value='shared/DX4J5S42B'),
+                                                 html.Param(name='toolbar',
+                                                            value='yes'),
+                                                 html.Param(name='static_image',
+                                                            value='https://public.tableau.com/static/images/Tw/Tweeter_test/Sheet1/1.png'),
+                                                 html.Param(name='animate_transition',
+                                                            value='yes'),
+                                                 html.Param(name='display_static_image',
+                                                            value='yes'),
+                                                 html.Param(name='display_spinner',
+                                                            value='yes'),
+                                                 html.Param(name='display_overlay',
+                                                            value='yes'),
+                                                 html.Param(name='display_count',
+                                                            value='yes'),
+                                                 html.Param(name='language',
+                                                            value='en-US'),
+                                                 ]
+                                       )]),
             html.Script(type='text/javascript', children="""
                 var divElement = document.getElementById('viz1625607118381');
                 var vizElement = divElement.getElementsByTagName('object')[0];
@@ -252,37 +314,6 @@ def create_content():
     return content
 
 
-def create_footer():
-    p0 = html.P(
-        children=[
-            html.Span("Built with "),
-            html.A(
-                "Plotly Dash", href="https://github.com/plotly/dash", target="_blank"
-            ),
-        ]
-    )
-    p1 = html.P(
-        children=[
-            html.Span("Data from "),
-            html.A("some website", href="https://some-website.com/", target="_blank"),
-        ]
-    )
-    a_fa = html.A(
-        children=[
-            html.I([], className="fa fa-font-awesome fa-2x"), html.Span("Font Awesome")
-        ],
-        style={"textDecoration": "none"},
-        href="http://fontawesome.io/",
-        target="_blank",
-    )
-
-    div = html.Div([p0, p1, a_fa],
-                   id="foot",
-                   className="footer", )
-    footer = html.Footer(children=div)
-    return footer
-
-
 def serve_layout():
     content_box = html.Div(id="body",
                            className="content",
@@ -310,20 +341,14 @@ def serve_layout():
 app.layout = serve_layout
 
 
-# for js in external_js:
-#    app.scripts.append_script({"external_url": js})
-# for css in external_css:
-#    app.css.append_css({"external_url": css})
-
-
 # TODO: callbacks
 
 @app.callback(Output("body", "children"), [Input("url", "pathname")])
 def render_page_content(pathname):
     if pathname in ["/", "/code"]:
-        return create_content()
+        return create_scratch_content()
     elif pathname == "/real-time":
-        return html.P("This is the content of page 1!")
+        return real_time()
     elif pathname == "/historical":
         return html.P("This is the content of page 2. Yay!")
     elif pathname == "/indicators":
@@ -359,7 +384,7 @@ app.clientside_callback(
     Input('toggleB', 'n_clicks'),
 )
 
-#Activate Dash
+# Activate Dash
 app.clientside_callback(
     """
     function (x) {
@@ -376,7 +401,6 @@ app.clientside_callback(
     Output('null2', 'data'),
     Input('activate_tableau', 'n_clicks')
 )
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

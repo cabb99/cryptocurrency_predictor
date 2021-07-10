@@ -301,16 +301,29 @@ def covid():
     content = html.Div([
         html.H2('Did COVID-19 influence the price of cryptocurrencies?'),
         html.Hr(),
+        html.P("""One of the most important recent events has been the COVID-19 pandemic. 
+        It disrupted the life of people around the world, forcing them to rethink their jobs, stay at home, 
+        practice social distancing, and to change their life priorities. During the same time some cryptocurrencies 
+        like bitcoin had a trend upwards. We observed that this correlation is stronger when we focus on particular 
+        countries, like UK, US or Russia."""),
         html.Div([
             dcc.Dropdown(id='covid-coin', options=[
+                {'label': 'Top500', 'value': 'top500'},
                 {'label': 'Bitcoin', 'value': 'BTC'},
                 {'label': 'Ethereum', 'value': 'ETH'},
                 {'label': 'Dogecoin', 'value': 'DOGE'}
             ], value='BTC', placeholder='Select coin to compare to covid'),
-            html.Div('GeoMap of COVID Rates vs Coin Prices', className='placeholder'),
-            html.Div('Line Plot of selected Country Cases relative to selected crypto price', className='placeholder'),
+            dcc.RadioItems(id='covid-cumulative', options=[
+                {'label': 'Total cases', 'value': 'True'},
+                {'label': 'New cases', 'value': 'False'},
+            ]),
+            html.Div('Line Plot of selected Country Cases relative to selected crypto price ', className='placeholder'),
+            html.Div('Reg Plot of selected Country Cases relative to selected crypto price', className='placeholder'),
+            html.Button('All the world', id='World'),
+            html.Div('GeoMap of correlation between COVID Rates vs Coin Prices', className='placeholder'),
+            html.Div('US GeoMap of correlation between COVID Rates vs Coin Prices', className='placeholder'),
+        ]),
 
-        ])
     ])
     return content
 

@@ -4,12 +4,14 @@ import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import chart_studio.plotly as py
+import pandas as pd
 import plotly.graph_objs as go
 
 from flask import Flask
 from dash import Dash
 from dash.dependencies import Input, Output, State
 from dotenv import load_dotenv
+
 try:
     import exceptions
 except ImportError:
@@ -196,26 +198,30 @@ cryptocurrencies.
     ])
     return content
 
+
 def forecast():
+    df = pd.read_csv('s3://ds4a-team151/CoinMarketCap_info.csv', index_col=0)
+    df2 = df[:100].copy()
+    df2['label'] = df2['name']
+    df2['value'] = df2['id']
+    crypto_options = list(df2[['label', 'value']].T.to_dict().values())
+
     content = html.Div([
         html.H2('Price forecast'),
         html.Div(
-        [html.H3('Coin forecast'),]+
-        [dcc.Dropdown(id='forecast-coin', options=[
-            {'label': 'Bitcoin', 'value': 'BTC'},
-            {'label': 'Ethereum', 'value': 'ETH'},
-            {'label': 'Dogecoin', 'value': 'DOGE'}
-        ], value='BTC', placeholder='Cryptocurrencies sorted by future gains')] +
-        [html.Button(i) for i in ['All', '5Y', '1Y', '3M', '1M', '1W', '1D', '4H']] +
-        [dcc.Dropdown(options=[
-            {'label': 'Line', 'value': 'line'},
-            {'label': 'Area', 'value': 'area'},
-            {'label': 'Candle', 'value': 'candle'},
-            {'label': 'HA-Candle', 'value': 'candle'}  # Heikin-Ashi Candles
-        ], value='line', placeholder='Select a plot type')] +
-        [html.Div('''Candle Chart plot of recent prices.
+            [html.H3('Coin forecast'), ] +
+            [dcc.Dropdown(id='forecast-coin', options=crypto_options,
+                          value='BTC', placeholder='Cryptocurrencies sorted by future gains')] +
+            [html.Button(i) for i in ['All', '5Y', '1Y', '3M', '1M', '1W', '1D', '4H']] +
+            [dcc.Dropdown(options=[
+                {'label': 'Line', 'value': 'line'},
+                {'label': 'Area', 'value': 'area'},
+                {'label': 'Candle', 'value': 'candle'},
+                {'label': 'HA-Candle', 'value': 'candle'}  # Heikin-Ashi Candles
+            ], value='line', placeholder='Select a plot type')] +
+            [html.Div('''Candle Chart plot of recent prices.
         It includes dotted lines 3-14 days into the future for forecast''', className='placeholder')]
-    ), html.Div(
+        ), html.Div(
             [html.H3('Forecast overview'),
              html.Div('Barplot overview of forecasts for some coins', className='placeholder')]
         )])
@@ -234,7 +240,8 @@ def historical():
                 {'label': 'Dogecoin', 'value': 'DOGE'}
             ], value='BTC', placeholder='Select coin to compare history'),
             html.Div('Historical Crypto Price Line Chart for Specific Dates', className='placeholder'),
-            html.Div('Historical Events aligned with above chart timeline (Hover to know event)', className='placeholder'),
+            html.Div('Historical Events aligned with above chart timeline (Hover to know event)',
+                     className='placeholder'),
         ])
     ])
     return content
@@ -249,6 +256,7 @@ def indicators():
         ])
     ])
     return content
+
 
 def coins():
     content = html.Div([
@@ -364,6 +372,11 @@ def create_scratch_content():
                 style={"marginBottom": 20},
             ),
             html.Hr(),
+            html.Img(src='https://s2.coinmarketcap.com/static/img/coins/64x64/1.png'),
+            dcc.Dropdown(id='forecast-coin', options=[
+                {'label': html.Img(src='https://s2.coinmarketcap.com/static/img/coins/64x64/1.png'),
+                 'value': 1}],
+                         value='BTC', placeholder='Cryptocurrencies sorted by future gains'),
             html.Button(id='activate_tableau'),
             html.Div(className='tableauPlaceholder',
                      id='viz1625607118381',

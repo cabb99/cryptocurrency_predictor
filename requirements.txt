@@ -10,4 +10,4 @@ pytest
 python-dotenv
 pandas
 fsspec==0.8.3
-s3fs
+s3fs==0.5.2

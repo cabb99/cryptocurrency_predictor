@@ -141,6 +141,40 @@ def create_header():
         id="head", className="header")
     return header
 
+
+def create_footer():
+    """Creates the footer of the webpage.
+    It remains constant across different pages."""
+    p0 = html.P(
+        children=[
+            html.Span("Built with "),
+            html.A(
+                "Plotly Dash", href="https://github.com/plotly/dash", target="_blank"
+            ),
+        ]
+    )
+    p1 = html.P(
+        children=[
+            html.Span("Data from "),
+            html.A("some website", href="https://some-website.com/", target="_blank"),
+        ]
+    )
+    a_fa = html.A(
+        children=[
+            html.I([], className="fa fa-font-awesome fa-2x"), html.Span("Font Awesome")
+        ],
+        style={"textDecoration": "none"},
+        href="http://fontawesome.io/",
+        target="_blank",
+    )
+
+    div = html.Div([p0, p1, a_fa],
+                   id="foot",
+                   className="footer", )
+    footer = html.Footer(children=div)
+    return footer
+
+
 def home():
     content = html.Div([
         html.H2('Overview'),

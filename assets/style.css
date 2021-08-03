@@ -172,7 +172,7 @@
     padding: 2rem 1rem;
     transition: 0.5s;
     background-color: var(--theme3);
-    color:var(--theme0);Heikin-Ashi candle
+    color:var(--theme0);
 }
 
 .footer a {
@@ -263,4 +263,8 @@
 .forecast-radio{
     display:inline-block;
     width:30%
+}
+
+.hidden-button{
+    display:None;
 }

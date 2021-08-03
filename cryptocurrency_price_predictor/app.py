@@ -114,23 +114,23 @@ def create_sidebar():
                                 href="/forecast", id="page-1-link", className="page-link"),
                     dbc.NavLink([html.I(className="fas fa-chart-bar"), " Historical"],
                                 href="/historical", id="page-2-link", className="page-link"),
-                    dbc.NavLink([html.I(className="fas fa-microscope"), " Indicators"],
-                                href="/indicators", id="page-3-link", className="page-link"),
-                    dbc.NavLink([html.I(className="fas fa-coins"), " Coins"],
-                                href="/coins", id="page-4-link", className="page-link"),
-                    dbc.NavLink([html.I(className="fas fa-chart-pie"), " Market Cap"],
-                                href="/marketcap", id="page-5-link", className="page-link"),
-                    dbc.NavLink([html.I(className="fas fa-heart"), " Sentiment"],
-                                href="/sentiment", id="page-6-link", className="page-link"),
-                    dbc.NavLink([html.I(className="fas fa-virus"), " COVID"],
-                                href="/covid", id="page-7-link", className="page-link"),
-                    dbc.NavLink([html.I(className="fas fa-code"), " Code"],
-                                href="/code", id="page-8-link", className="page-link"),
+                    #dbc.NavLink([html.I(className="fas fa-microscope"), " Indicators"],
+                    #            href="/indicators", id="page-3-link", className="page-link"),
+                    #dbc.NavLink([html.I(className="fas fa-coins"), " Coins"],
+                    #            href="/coins", id="page-4-link", className="page-link"),
+                    #dbc.NavLink([html.I(className="fas fa-chart-pie"), " Market Cap"],
+                    #            href="/marketcap", id="page-5-link", className="page-link"),
+                    #dbc.NavLink([html.I(className="fas fa-heart"), " Sentiment"],
+                    #            href="/sentiment", id="page-6-link", className="page-link"),
+                    #dbc.NavLink([html.I(className="fas fa-virus"), " COVID"],
+                    #            href="/covid", id="page-7-link", className="page-link"),
+                    #dbc.NavLink([html.I(className="fas fa-code"), " Code"],
+                    #            href="/code", id="page-8-link", className="page-link"),
                     dbc.NavLink([html.I(className="fab fa-github"), " Github"],
                                 href="https://github.com/cabb99/cryptocurrency_predictor",
                                 target='_blank', id="page-9-link", className="page-link"),
-                    dbc.NavLink([html.I(className="fas fa-users"), " Group"],
-                                href="/group", id="page-10-link", className="page-link"),
+                    #dbc.NavLink([html.I(className="fas fa-users"), " Group"],
+                    #            href="/group", id="page-10-link", className="page-link"),
                 ],
                 vertical=True,
                 pills=True,
@@ -177,7 +177,7 @@ def create_footer():
         target="_blank",
     )
 
-    div = html.Div([p0, p1, a_fa],
+    div = html.Div([p0],
                    id="foot",
                    className="footer", )
     footer = html.Footer(children=div)
@@ -208,10 +208,9 @@ cryptocurrencies.
 
 def forecast():
     df = pd.read_csv('s3://ds4a-team151/Forecast_coins.csv', index_col=0)
-    df2 = df[:100].copy()
-    df2['label'] = df2['name']
-    df2['value'] = df2.index
-    crypto_options = list(df2[['label', 'value']].T.to_dict().values())
+    df['label'] = [f'{c["name"]} ({c["symbol"]})' for ii, c in df.iterrows()]
+    df['value'] = df.index
+    crypto_options = list(df[['label', 'value']].T.to_dict().values())
     # print(crypto_options)
 
     content = html.Div([
@@ -226,30 +225,107 @@ def forecast():
                 {'label': 'Logarithmic', 'value': 'log'}],
                             value='linear')] +
             [html.H2([html.Img(id='forecast-coin-logo', className='forecast-coin-logo'),
-                      html.P('sample-name', id='forecast-coin-name', className='forecast-coin-name')])] +
+                      html.P('Loading, please wait a few seconds', id='forecast-coin-name', className='forecast-coin-name')])] +
             [dcc.Graph(id='forecast-graph', )] +
-            [html.P('Sample description', id='forecast-coin-description')]
-        ), html.Div(
-            [html.H3('Forecast overview'),
-             html.Div('Barplot overview of forecasts for some coins', className='placeholder')]
-        )])
+            [html.P('The plot will appear here', id='forecast-coin-description')]
+        ),
+    #    html.Div(
+    #        [html.H3('Forecast overview'),
+    #         html.Div('Barplot overview of forecasts for some coins', className='placeholder')]
+    #    )
+    ])
     return content
 
+
+# def historical():
+#     content = html.Div([
+#         html.H2('Historical prices'),
+#         html.Hr(),
+#         html.Div([
+#             dcc.DatePickerRange(),
+#             dcc.Dropdown(id='historical-coin', options=[
+#                 {'label': 'Bitcoin', 'value': 'BTC'},
+#                 {'label': 'Ethereum', 'value': 'ETH'},
+#                 {'label': 'Dogecoin', 'value': 'DOGE'}
+#             ], value='BTC', placeholder='Select coin to compare history'),
+#             html.Div('Historical Crypto Price Line Chart for Specific Dates', className='placeholder'),
+#             html.Div('Historical Events aligned with above chart timeline (Hover to know event)',
+#                      className='placeholder'),
+#         ])
+#     ])
+#     return content
 
 def historical():
     content = html.Div([
         html.H2('Historical prices'),
         html.Hr(),
         html.Div([
-            dcc.DatePickerRange(),
-            dcc.Dropdown(id='historical-coin', options=[
-                {'label': 'Bitcoin', 'value': 'BTC'},
-                {'label': 'Ethereum', 'value': 'ETH'},
-                {'label': 'Dogecoin', 'value': 'DOGE'}
-            ], value='BTC', placeholder='Select coin to compare history'),
-            html.Div('Historical Crypto Price Line Chart for Specific Dates', className='placeholder'),
-            html.Div('Historical Events aligned with above chart timeline (Hover to know event)',
-                     className='placeholder'),
+            html.Button(id='activate_tableau_viz1628020240288', className='hidden-button'),
+            html.Div(
+                children=[
+                    html.Div(
+                        className="tableauPlaceholder",
+                        id="viz1628020240288",
+                        style={"position": "relative"},
+                        children=[
+                            html.Noscript(
+                                children=[
+                                    html.A(
+                                        href="#",
+                                        children=[
+                                            html.Img(
+                                                alt=" ",
+                                                src="https://public.tableau.com/static/images/Cr/CryptoAnalysis_16280131226670/Prices/1_rss.png",
+                                                style={"border": "none"},
+                                                children=[],
+                                            )
+                                        ],
+                                    )
+                                ]
+                            ),
+                            html.ObjectEl(
+                                className="tableauViz",
+                                style={"display":"none"},
+                                children=[
+                                    html.Param(
+                                        name="host_url",
+                                        value="https%3A%2F%2Fpublic.tableau.com%2F",
+                                        children=[],
+                                    ),
+                                    html.Param(name="embed_code_version", value="3", children=[]),
+                                    html.Param(name="site_root", value="", children=[]),
+                                    html.Param(
+                                        name="name",
+                                        value="CryptoAnalysis_16280131226670/Prices",
+                                        children=[],
+                                    ),
+                                    html.Param(name="tabs", value="yes", children=[]),
+                                    html.Param(name="toolbar", value="yes", children=[]),
+                                    html.Param(
+                                        name="static_image",
+                                        value="https://public.tableau.com/static/images/Cr/CryptoAnalysis_16280131226670/Prices/1.png",
+                                        children=[],
+                                    ),
+                                    html.Param(name="animate_transition", value="yes", children=[]),
+                                    html.Param(
+                                        name="display_static_image", value="yes", children=[]
+                                    ),
+                                    html.Param(name="display_spinner", value="yes", children=[]),
+                                    html.Param(name="display_overlay", value="yes", children=[]),
+                                    html.Param(name="display_count", value="yes", children=[]),
+                                    html.Param(name="language", value="en-US", children=[]),
+                                ],
+                            ),
+                        ],
+                    ),
+                    html.Script(
+                        type="text/javascript",
+                        children=[
+                            "var divElement = document.getElementById('viz1628020240288');                    var vizElement = divElement.getElementsByTagName('object')[0];                    vizElement.style.width='100%';vizElement.style.height=(divElement.offsetWidth*0.75)+'px';                    var scriptElement = document.createElement('script');                    scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';                    vizElement.parentNode.insertBefore(scriptElement, vizElement);"
+                        ],
+                    ),
+                ]
+            )
         ])
     ])
     return content
@@ -569,7 +645,7 @@ def render_page_content(pathname):
     Input('forecast-yaxis-type', 'value')
 ])
 def update_forecast_figure(col, n1, n2, n3, yaxis_type):
-    print(col,n1,n2,n3,yaxis_type)
+    print(col, n1, n2, n3, yaxis_type)
     forecast_coins = pd.read_csv('s3://ds4a-team151/Forecast_coins.csv', index_col=0)
     yearly_historical = pd.read_csv('s3://ds4a-team151/yearly_historical.csv', index_col='date')
     last_prices = yearly_historical
@@ -730,6 +806,23 @@ app.clientside_callback(
     ,
     Output('null2', 'data'),
     Input('activate_tableau', 'n_clicks')
+)
+
+# Activate Dash
+app.clientside_callback(
+    """
+    function (x) {
+        var divElement = document.getElementById('viz1628020240288');
+        var vizElement = divElement.getElementsByTagName('object')[0];
+        vizElement.style.width='100%';vizElement.style.height=(divElement.offsetWidth*0.75)+'px';
+        var scriptElement = document.createElement('script');
+        scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+        vizElement.parentNode.insertBefore(scriptElement, vizElement);
+    }
+    """
+    ,
+    Output('null3', 'data'),
+    Input('activate_tableau_viz1628020240288', 'n_clicks')
 )
 
 if __name__ == "__main__":

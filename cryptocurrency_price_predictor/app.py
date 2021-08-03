@@ -15,7 +15,6 @@ from dotenv import load_dotenv
 import plotly.graph_objects as go
 from scipy.stats import norm
 from scipy.stats import t
-import talib
 import numpy as np
 import pandas as pd
 import datetime
@@ -609,7 +608,7 @@ def update_forecast_figure(col, n1, n2, n3, yaxis_type):
     price_ts = last_prices[-prediction_time_back:][col]
     tt = []
     for period in range(1, 15):
-        y = np.log(talib.ROCR(price_ts, timeperiod=period).dropna())
+        y = np.log((price_ts/price_ts.shift(period)).dropna())
         tdof, tloc, tscale = t.fit(y)
         tt += [[tdof, tloc, tscale] +
                list(np.exp(t.ppf(q=[norm.cdf(np.linspace(-3, 3, 7))], df=tdof, loc=tloc, scale=tscale)[0])) +

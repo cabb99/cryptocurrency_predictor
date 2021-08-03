@@ -12,6 +12,14 @@ from dash import Dash
 from dash.dependencies import Input, Output, State
 from dotenv import load_dotenv
 
+import plotly.graph_objects as go
+from scipy.stats import norm
+from scipy.stats import t
+import talib
+import numpy as np
+import pandas as pd
+import datetime
+
 try:
     import exceptions
 except ImportError:
@@ -200,27 +208,28 @@ cryptocurrencies.
 
 
 def forecast():
-    df = pd.read_csv('s3://ds4a-team151/CoinMarketCap_info.csv', index_col=0)
+    df = pd.read_csv('s3://ds4a-team151/Forecast_coins.csv', index_col=0)
     df2 = df[:100].copy()
     df2['label'] = df2['name']
-    df2['value'] = df2['id']
+    df2['value'] = df2.index
     crypto_options = list(df2[['label', 'value']].T.to_dict().values())
+    # print(crypto_options)
 
     content = html.Div([
         html.H2('Price forecast'),
         html.Div(
-            [html.H3('Coin forecast'), ] +
-            [dcc.Dropdown(id='forecast-coin', options=crypto_options,
-                          value='BTC', placeholder='Cryptocurrencies sorted by future gains')] +
-            [html.Button(i) for i in ['All', '5Y', '1Y', '3M', '1M', '1W', '1D', '4H']] +
-            [dcc.Dropdown(options=[
-                {'label': 'Line', 'value': 'line'},
-                {'label': 'Area', 'value': 'area'},
-                {'label': 'Candle', 'value': 'candle'},
-                {'label': 'HA-Candle', 'value': 'candle'}  # Heikin-Ashi Candles
-            ], value='line', placeholder='Select a plot type')] +
-            [html.Div('''Candle Chart plot of recent prices.
-        It includes dotted lines 3-14 days into the future for forecast''', className='placeholder')]
+            #[html.H3('Coin forecast'), ] +
+            [dcc.Dropdown(id='forecast-coin', className='forecast-selection', options=crypto_options,
+                          value=1, placeholder='Cryptocurrencies sorted by future gains')] +
+            [html.Button(i, id=f'button-{i}', n_clicks=0, className='forecast-button') for i in ['1Y', '3M', '1M']] +
+            [dcc.RadioItems(id='forecast-yaxis-type', className='forecast-radio', options=[
+                {'label': 'Linear', 'value': 'linear'},
+                {'label': 'Logarithmic', 'value': 'log'}],
+                            value='linear')] +
+            [html.H2([html.Img(id='forecast-coin-logo', className='forecast-coin-logo'),
+                      html.P('sample-name', id='forecast-coin-name', className='forecast-coin-name')])] +
+            [dcc.Graph(id='forecast-graph', )] +
+            [html.P('Sample description', id='forecast-coin-description')]
         ), html.Div(
             [html.H3('Forecast overview'),
              html.Div('Barplot overview of forecasts for some coins', className='placeholder')]
@@ -543,6 +552,147 @@ def render_page_content(pathname):
             html.P(f"The pathname {pathname} was not recognised..."),
         ]
     )
+
+
+@app.callback([
+    Output('forecast-graph', 'figure'),
+    Output('forecast-coin-name', 'children'),
+    Output('forecast-coin-logo', 'src'),
+    Output('forecast-coin-description', 'children'),
+    Output('button-1Y', 'n_clicks'),
+    Output('button-3M', 'n_clicks'),
+    Output('button-1M', 'n_clicks'),
+], [
+    Input('forecast-coin', 'value'),
+    Input('button-1Y', 'n_clicks'),
+    Input('button-3M', 'n_clicks'),
+    Input('button-1M', 'n_clicks'),
+    Input('forecast-yaxis-type', 'value')
+])
+def update_forecast_figure(col, n1, n2, n3, yaxis_type):
+    print(col,n1,n2,n3,yaxis_type)
+    forecast_coins = pd.read_csv('s3://ds4a-team151/Forecast_coins.csv', index_col=0)
+    yearly_historical = pd.read_csv('s3://ds4a-team151/yearly_historical.csv', index_col='date')
+    last_prices = yearly_historical
+    last_prices.columns = last_prices.columns.astype(int)
+
+    # parameters
+    # col = 1
+    # yaxis_type = 'linear'
+    if n1 == 0:
+        time_back = 365
+        n1, n2, n3 = 1, -1, -1
+    elif n2 == 0:
+        time_back = 30 * 3
+        n1, n2, n3 = -1, 1, -1
+    elif n3 == 0:
+        time_back = 30
+        n1, n2, n3 = -1, -1, 1
+    elif n1 > 0:
+        time_back = 365
+        n1, n2, n3 = 1, -1, -1
+    elif n2 > 0:
+        time_back = 30 * 3
+        n1, n2, n3 = -1, 1, -1
+    else:
+        time_back = 30
+        n1, n2, n3 = -1, -1, 1
+
+    prediction_time_back = time_back
+
+    # Check that the column is in the table
+    if col not in (last_prices.columns):
+        print(f'{col} is not a valid id')
+
+    # Fit prices to a T
+
+    price_ts = last_prices[-prediction_time_back:][col]
+    tt = []
+    for period in range(1, 15):
+        y = np.log(talib.ROCR(price_ts, timeperiod=period).dropna())
+        tdof, tloc, tscale = t.fit(y)
+        tt += [[tdof, tloc, tscale] +
+               list(np.exp(t.ppf(q=[norm.cdf(np.linspace(-3, 3, 7))], df=tdof, loc=tloc, scale=tscale)[0])) +
+               list(np.exp(t.rvs(df=tdof, loc=tloc, scale=tscale, size=100)))]
+        print(period, tdof, tloc, tscale)
+
+    # Format predictions
+    tt = pd.DataFrame(tt,
+                      columns=['df', 'loc', 'scale'] + [f'std{i:.0f}' for i in np.linspace(-3, 3, 7)] + [f'gain{i:02d}'
+                                                                                                         for i in
+                                                                                                         range(100)])
+
+    # Format predictions
+    predictions = last_prices[col].iloc[-1] * tt.iloc[:, 3:10]
+    predictions.index = [(pd.DatetimeIndex(last_prices.index)[-1] + datetime.timedelta(1 + i)).date().isoformat() for i
+                         in predictions.index]
+    for q in predictions.columns:
+        predictions.at[pd.DatetimeIndex(last_prices.index)[-1].date().isoformat(), q] = last_prices[col].iloc[-1]
+    predictions = predictions.sort_index()
+
+    # Reindex
+    last_prices.index = pd.DatetimeIndex(last_prices.index)
+    predictions.index = pd.DatetimeIndex(predictions.index)
+
+    # Initialize figure
+    fig = go.Figure()
+
+    # Real price
+    fig.add_trace(go.Scatter(name='Prices', x=last_prices.index, y=last_prices[col],
+                             line=dict(color='rgba(53,130,196,1)', width=4), showlegend=False))
+    if predictions['std0'].iloc[-1] > predictions['std0'].iloc[0]:
+        fillcolor1 = 'rgba(0,138,32,0.4)'
+        fillcolor2 = 'rgba(0,112,23,0.6)'
+        color = 'rgba(0,92,18,1)'
+    else:
+        fillcolor1 = 'rgba(138,36,36,0.4)'
+        fillcolor2 = 'rgba(105,28,28,0.6)'
+        color = 'rgba(69,19,19,1)'
+
+    # Predicted prices (from wide to narrow)
+    fig.add_trace(go.Scatter(name='95.5%',
+                             x=pd.DatetimeIndex([*predictions.index, *predictions.index[::-1]]),
+                             y=[*predictions['std2'], *predictions['std-2'][::-1]],
+                             fill='toself',
+                             fillcolor=fillcolor1,
+                             line_color='rgba(255,255,255,0)',
+                             showlegend=True,
+                             ))
+    fig.add_trace(go.Scatter(name='68.3%',
+                             x=pd.DatetimeIndex([*predictions.index, *predictions.index[::-1]]),
+                             y=[*predictions['std1'], *predictions['std-1'][::-1]],
+                             fill='toself',
+                             fillcolor=fillcolor2,
+                             line_color='rgba(255,255,255,0)',
+                             showlegend=True,
+                             ))
+    fig.add_trace(go.Scatter(name='Prediction mean', x=predictions.index, y=predictions['std0'],
+                             line=dict(color=color, width=4)))
+
+    # Formatting layout
+    fig.update_layout(title=f'{forecast_coins["name"][col]} ({forecast_coins["symbol"][col]}) price prediction',
+                      xaxis_title='Date',
+                      yaxis_title='Price ($)',
+                      paper_bgcolor='rgba(0,0,0,0)',
+                      plot_bgcolor='rgba(0,0,0,0)',
+                      yaxis_type=yaxis_type
+                      )
+    xmin = predictions.index.min() - datetime.timedelta(time_back)
+    xmax = predictions.index.max()
+    ymax = max(predictions.iloc[:, 1:-1].max().max(), last_prices.loc[xmin:, col].max())
+    ymin = min(predictions.iloc[:, 1:-1].min().min(), last_prices.loc[xmin:, col].min())
+    fig.update_xaxes(range=[xmin, xmax])
+    if yaxis_type == 'linear':
+        fig.update_yaxes(range=[ymin, ymax])
+    else:
+        fig.update_yaxes(range=[np.log(ymin) / np.log(10), np.log(ymax) / np.log(10)])
+
+    description = forecast_coins["description3"][col]
+    logo = forecast_coins["logo"][col]
+    name = f' {forecast_coins["name"][col]} price forecast '
+    # Show figure
+    print('Generated forecast figure')
+    return [fig, name, logo, description, n1, n2, n3]
 
 
 #########################

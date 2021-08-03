@@ -238,3 +238,29 @@
         margin-left: 250px;
     }
 }
+
+/* Forecast:*/
+.forecast-coin-logo{
+    display:inline;
+    width:40px;
+}
+
+.forecast-coin-name{
+    display:inline;
+}
+
+.forecast-selection{
+    display:inline-block;
+    width:30%
+}
+
+.forecast-button{
+    display:inline-block;
+    with:10%
+
+}
+
+.forecast-radio{
+    display:inline-block;
+    width:30%
+}

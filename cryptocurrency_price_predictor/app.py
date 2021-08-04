@@ -190,7 +190,7 @@ def home():
         html.H2('Overview'),
         html.P("""Cryptocurrency is a burgeoning asset class with investors flocking to invest in all types of cryptos. 
 Bitcoin by itself has been the best performing asset in the past 10 years with an annualized return of 230%.
-1 bitcoin was valued at $1 in 2011 and now (2021) hovers in the $50,000 range, a whopping 5,000,000% increase."""),
+1 bitcoin was valued at $1 in 2011 and now (as of May 2021) hovers in the $50,000 range, a whopping 5,000,000% increase."""),
         html.Br(),
         html.P("""As more and more people look to diversify their portfolio and have exposure to this new asset class,
 having a tool to give investors and speculators alike an idea of how crypto prices will move will be a tremendous 
@@ -200,9 +200,19 @@ advantage."""),
 movement and volatility. Technical analysis alone would not be sufficient to predict price movement and it may not even 
 be the strongest determinant of price due to the lack of empirical evidence and history. In the example of Dogecoin, 
 price movement has been driven by tweets from Elon Musk and momentum investing with very little to-no fundamental 
-support. We want to provide a tool for people to use to make informed investment decisions when it comes to 
-cryptocurrencies.
+support. We want to provide a tool for people to think about various different factors to make the best informed
+investment decisions when it comes to cryptocurrencies.
 """),
+        html.Br(),
+        html.H2('Research & Methodology')
+        html.P("""Our team attempted create a tool to predict and forecast cryptocurrency prices based on various factors such
+as tweets, reddit threads, financial indicators, index benchmarks, bond prices, etc. using zero order, linear regression,
+logistic regression, LSTM and ARIMA models, etc to determine correlation. Other methods included fitting a T-distribution
+to determine profitablity and volatility."""),
+        html.Br(),
+        html.H2('Conclusion'),
+        html.P("""The various factors chosen did not quantifiably indicate a correlation or predict an accurate price
+change to the 5 cryptocurrencies analyzed."""),
     ])
     return content
 
@@ -398,11 +408,11 @@ def covid():
     content = html.Div([
         html.H2('Did COVID-19 influence the price of cryptocurrencies?'),
         html.Hr(),
-        html.P("""One of the most important recent events has been the COVID-19 pandemic. 
-        It disrupted the life of people around the world, forcing them to rethink their jobs, stay at home, 
-        practice social distancing, and to change their life priorities. During the same time some cryptocurrencies 
-        like bitcoin had a trend upwards. We observed that this correlation is stronger when we focus on particular 
-        countries, like UK, US or Russia."""),
+        html.P("""One of the most historic events has been the COVID-19 pandemic. 
+        It disrupted the life of people around the world, forcing them to rethink their jobs, rethink working from home, 
+        practice social distancing, and to change their life priorities. During the same period, cryptocurrencies 
+        such as Bitcoin continued to increase in price. We observed that this correlation is stronger when we focus on particular 
+        countries such as the UK, US or Russia."""),
         html.Div([
             dcc.Dropdown(id='covid-coin', options=[
                 {'label': 'Top500', 'value': 'top500'},

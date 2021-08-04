@@ -202,6 +202,16 @@ price movement has been driven by tweets from Elon Musk and momentum investing w
 support. We want to provide a tool for people to think about various different factors to make the best informed
 investment decisions when it comes to cryptocurrencies.
 """),
+        html.Br(),
+        html.H2('Research & Methodology')
+        html.P("""Our team attempted create a tool to predict and forecast cryptocurrency prices based on various factors such
+as tweets, reddit threads, financial indicators, index benchmarks, bond prices, etc. using zero order, linear regression,
+logistic regression, LSTM and ARIMA models, etc to determine correlation. Other methods included fitting a T-distribution
+to determine profitablity and volatility."""),
+        html.Br(),
+        html.H2('Conclusion'),
+        html.P("""The various factors chosen did not quantifiably indicate a correlation or predict an accurate price
+change to the 5 cryptocurrencies analyzed."""),
     ])
     return content
 

@@ -204,7 +204,7 @@ support. We want to provide a tool for people to think about various different f
 investment decisions when it comes to cryptocurrencies.
 """),
         html.Br(),
-        html.H2('Research & Methodology')
+        html.H2('Research & Methodology'),
         html.P("""Our team attempted create a tool to predict and forecast cryptocurrency prices based on various factors such
 as tweets, reddit threads, financial indicators, index benchmarks, bond prices, etc. using zero order, linear regression,
 logistic regression, LSTM and ARIMA models, etc to determine correlation. Other methods included fitting a T-distribution

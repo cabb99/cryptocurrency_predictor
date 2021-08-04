@@ -777,7 +777,7 @@ def update_forecast_figure(col, n1, n2, n3, yaxis_type):
 
     fig2 = ff.create_distplot(hist_data, group_labels,show_hist=False)
 
-    fig2.update_layout(title=f'{forecast_coins["name"][col]} ({forecast_coins["symbol"][col]}) kernel distribution estimation of change of price',
+    fig2.update_layout(title=f'{forecast_coins["name"][col]} ({forecast_coins["symbol"][col]}) kernel density estimate of change of price',
                        xaxis_title='LOG (ROCR)',
                        yaxis_title='Probability density',
                        paper_bgcolor='rgba(0,0,0,0)',
@@ -788,7 +788,7 @@ def update_forecast_figure(col, n1, n2, n3, yaxis_type):
     xmax=max(hist_data[-1])
     fig2.update_xaxes(range=[xmin, xmax])
     print('Generated kde figure')
-    return [fig,fig2, name, logo, description, n1, n2, n3]
+    return [fig, fig2, name, logo, description, n1, n2, n3]
 
 
 #########################

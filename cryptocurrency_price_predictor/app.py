@@ -6,6 +6,7 @@ import dash_html_components as html
 import chart_studio.plotly as py
 import pandas as pd
 import plotly.graph_objs as go
+import plotly.figure_factory as ff
 
 from flask import Flask
 from dash import Dash
@@ -229,10 +230,13 @@ def forecast():
             [dcc.Graph(id='forecast-graph', )] +
             [html.P('The plot will appear here', id='forecast-coin-description')]
         ),
-    #    html.Div(
-    #        [html.H3('Forecast overview'),
-    #         html.Div('Barplot overview of forecasts for some coins', className='placeholder')]
-    #    )
+        html.Div(
+            [html.H3('Distribution of price change'),
+             html.P('''To forecast the price in the future we fitted the natural logarithm of the ratio of the change in
+              price "log(ROCR)" to a Student-T distribution. The following plot shows the distribution of price over the
+              period used for the forecast.'''),
+             dcc.Graph(id='forecast-kde',)]
+        )
     ])
     return content
 
@@ -631,6 +635,7 @@ def render_page_content(pathname):
 
 @app.callback([
     Output('forecast-graph', 'figure'),
+    Output('forecast-kde', 'figure'),
     Output('forecast-coin-name', 'children'),
     Output('forecast-coin-logo', 'src'),
     Output('forecast-coin-description', 'children'),
@@ -765,9 +770,25 @@ def update_forecast_figure(col, n1, n2, n3, yaxis_type):
     description = forecast_coins["description3"][col]
     logo = forecast_coins["logo"][col]
     name = f' {forecast_coins["name"][col]} price forecast '
-    # Show figure
     print('Generated forecast figure')
-    return [fig, name, logo, description, n1, n2, n3]
+
+    hist_data = [np.log((price_ts/price_ts.shift(period)).dropna()) for period in range(1,15)][::-1]
+    group_labels = [f'ROCR {n} days' for n in range(1,15)][::-1] # name of the dataset
+
+    fig2 = ff.create_distplot(hist_data, group_labels,show_hist=False)
+
+    fig2.update_layout(title=f'{forecast_coins["name"][col]} ({forecast_coins["symbol"][col]}) kernel distribution estimation of change of price',
+                       xaxis_title='LOG (ROCR)',
+                       yaxis_title='Probability density',
+                       paper_bgcolor='rgba(0,0,0,0)',
+                       plot_bgcolor='rgba(0,0,0,0)',
+                       yaxis_type='linear'
+                       )
+    xmin=min(hist_data[-1])
+    xmax=max(hist_data[-1])
+    fig2.update_xaxes(range=[xmin, xmax])
+    print('Generated kde figure')
+    return [fig,fig2, name, logo, description, n1, n2, n3]
 
 
 #########################

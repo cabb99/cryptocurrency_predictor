@@ -3,22 +3,21 @@ import os
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
-import chart_studio.plotly as py
-import pandas as pd
+# import chart_studio.plotly as py
 import plotly.graph_objs as go
 import plotly.figure_factory as ff
 
 from flask import Flask
 from dash import Dash
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 from dotenv import load_dotenv
 
-import plotly.graph_objects as go
-from scipy.stats import norm
-from scipy.stats import t
+# from scipy.stats import norm
+# from scipy.stats import t
 import numpy as np
 import pandas as pd
 import datetime
+# import dash_table
 
 try:
     import exceptions
@@ -115,22 +114,22 @@ def create_sidebar():
                                 href="/forecast", id="page-1-link", className="page-link"),
                     dbc.NavLink([html.I(className="fas fa-chart-bar"), " Historical"],
                                 href="/historical", id="page-2-link", className="page-link"),
-                    #dbc.NavLink([html.I(className="fas fa-microscope"), " Indicators"],
+                    # dbc.NavLink([html.I(className="fas fa-microscope"), " Indicators"],
                     #            href="/indicators", id="page-3-link", className="page-link"),
-                    #dbc.NavLink([html.I(className="fas fa-coins"), " Coins"],
+                    # dbc.NavLink([html.I(className="fas fa-coins"), " Coins"],
                     #            href="/coins", id="page-4-link", className="page-link"),
-                    #dbc.NavLink([html.I(className="fas fa-chart-pie"), " Market Cap"],
+                    # dbc.NavLink([html.I(className="fas fa-chart-pie"), " Market Cap"],
                     #            href="/marketcap", id="page-5-link", className="page-link"),
-                    #dbc.NavLink([html.I(className="fas fa-heart"), " Sentiment"],
+                    # dbc.NavLink([html.I(className="fas fa-heart"), " Sentiment"],
                     #            href="/sentiment", id="page-6-link", className="page-link"),
-                    #dbc.NavLink([html.I(className="fas fa-virus"), " COVID"],
+                    # dbc.NavLink([html.I(className="fas fa-virus"), " COVID"],
                     #            href="/covid", id="page-7-link", className="page-link"),
-                    #dbc.NavLink([html.I(className="fas fa-code"), " Code"],
+                    # dbc.NavLink([html.I(className="fas fa-code"), " Code"],
                     #            href="/code", id="page-8-link", className="page-link"),
                     dbc.NavLink([html.I(className="fab fa-github"), " Github"],
                                 href="https://github.com/cabb99/cryptocurrency_predictor",
                                 target='_blank', id="page-9-link", className="page-link"),
-                    #dbc.NavLink([html.I(className="fas fa-users"), " Group"],
+                    # dbc.NavLink([html.I(className="fas fa-users"), " Group"],
                     #            href="/group", id="page-10-link", className="page-link"),
                 ],
                 vertical=True,
@@ -218,7 +217,9 @@ change to the 5 cryptocurrencies analyzed."""),
 
 
 def forecast():
-    df = pd.read_csv('s3://ds4a-team151/Forecast_coins.csv', index_col=0)
+    df = pd.read_csv('s3://ds4a-team151/Modelled_coins.csv', index_col=0)
+    df2 = pd.read_csv('s3://ds4a-team151/Modelled_coins_prices.csv', index_col='date')
+    df2.columns = df2.columns.astype(int)
     df['label'] = [f'{c["name"]} ({c["symbol"]})' for ii, c in df.iterrows()]
     df['value'] = df.index
     crypto_options = list(df[['label', 'value']].T.to_dict().values())
@@ -227,25 +228,29 @@ def forecast():
     content = html.Div([
         html.H2('Price forecast'),
         html.Div(
-            #[html.H3('Coin forecast'), ] +
+            # [html.H3('Coin forecast'), ] +
             [dcc.Dropdown(id='forecast-coin', className='forecast-selection', options=crypto_options,
-                          value=1, placeholder='Cryptocurrencies sorted by future gains')] +
-            [html.Button(i, id=f'button-{i}', n_clicks=0, className='forecast-button') for i in ['1Y', '3M', '1M']] +
-            [dcc.RadioItems(id='forecast-yaxis-type', className='forecast-radio', options=[
-                {'label': 'Linear', 'value': 'linear'},
-                {'label': 'Logarithmic', 'value': 'log'}],
-                            value='linear')] +
-            [html.H2([html.Img(id='forecast-coin-logo', className='forecast-coin-logo'),
-                      html.P('Loading, please wait a few seconds', id='forecast-coin-name', className='forecast-coin-name')])] +
-            [dcc.Graph(id='forecast-graph', )] +
-            [html.P('The plot will appear here', id='forecast-coin-description')]
+                          value=1, placeholder='Cryptocurrencies sorted by future gains'),
+             *[html.Button(i, id=f'button-{i}', n_clicks=0, className='forecast-button') for i in ['1Y', '3M', '1M']],
+             dcc.RadioItems(id='forecast-yaxis-type', className='forecast-radio', options=[
+                 {'label': 'Linear', 'value': 'linear'},
+                 {'label': 'Logarithmic', 'value': 'log'}],
+                            value='linear'),
+             html.H2([html.Img(id='forecast-coin-logo', className='forecast-coin-logo'),
+                      html.P('Loading, please wait a few seconds', id='forecast-coin-name',
+                             className='forecast-coin-name')]),
+             dcc.Graph(id='forecast-graph', ),
+             html.P('The plot will appear here', id='forecast-coin-description'),
+             dcc.Store(id='forecast-data', data=df.T.to_json(date_format='iso', orient='split')),
+             dcc.Store(id='forecast-data-prices', data=df2.to_json(date_format='iso', orient='split')),
+             ]
         ),
         html.Div(
             [html.H3('Distribution of price change'),
              html.P('''To forecast the price in the future we fitted the natural logarithm of the ratio of the change in
               price "log(ROCR)" to a Student-T distribution. The following plot shows the distribution of price over the
               period used for the forecast.'''),
-             dcc.Graph(id='forecast-kde',)]
+             dcc.Graph(id='forecast-kde', )]
         )
     ])
     return content
@@ -299,7 +304,7 @@ def historical():
                             ),
                             html.ObjectEl(
                                 className="tableauViz",
-                                style={"display":"none"},
+                                style={"display": "none"},
                                 children=[
                                     html.Param(
                                         name="host_url",
@@ -583,10 +588,9 @@ def create_scratch_content():
 def serve_layout():
     content_box = html.Div(id="body",
                            className="content",
-                           style={
-                               "marginLeft": "0rem",
-                               "marginRight": "rem",
-                               "padding": "2rem 1rem", }
+                           style={"marginLeft": "0rem",
+                                  "marginRight": "rem",
+                                  "padding": "2rem 1rem", }
                            )
 
     layout = html.Div((dcc.Location(id="url"),
@@ -643,6 +647,19 @@ def render_page_content(pathname):
     )
 
 
+# Show memory table
+from dash.exceptions import PreventUpdate
+
+
+@app.callback(Output('forecast-table', 'data'),
+              Input('forecast-data', 'data'))
+def on_data_set_table(data):
+    if data is None:
+        raise PreventUpdate
+
+    return data
+
+
 @app.callback([
     Output('forecast-graph', 'figure'),
     Output('forecast-kde', 'figure'),
@@ -653,18 +670,19 @@ def render_page_content(pathname):
     Output('button-3M', 'n_clicks'),
     Output('button-1M', 'n_clicks'),
 ], [
+    Input('forecast-data', 'data'),
+    Input('forecast-data-prices', 'data'),
     Input('forecast-coin', 'value'),
     Input('button-1Y', 'n_clicks'),
     Input('button-3M', 'n_clicks'),
     Input('button-1M', 'n_clicks'),
     Input('forecast-yaxis-type', 'value')
 ])
-def update_forecast_figure(col, n1, n2, n3, yaxis_type):
-    print(col, n1, n2, n3, yaxis_type)
-    forecast_coins = pd.read_csv('s3://ds4a-team151/Forecast_coins.csv', index_col=0)
-    yearly_historical = pd.read_csv('s3://ds4a-team151/yearly_historical.csv', index_col='date')
-    last_prices = yearly_historical
-    last_prices.columns = last_prices.columns.astype(int)
+def update_forecast_figure(coin_data, price_data, coin_id, n1, n2, n3, yaxis_type):
+    print(coin_id, n1, n2, n3, yaxis_type)
+    forecast_coins = pd.read_json(coin_data, orient='split')
+    yearly_historical = pd.read_json(price_data, orient='split')
+    yearly_historical.columns = yearly_historical.columns.astype(int)
 
     # parameters
     # col = 1
@@ -691,44 +709,48 @@ def update_forecast_figure(col, n1, n2, n3, yaxis_type):
     prediction_time_back = time_back
 
     # Check that the column is in the table
-    if col not in (last_prices.columns):
-        print(f'{col} is not a valid id')
+    if coin_id not in (yearly_historical.columns):
+        print(f'{coin_id} is not a valid id')
 
-    # Fit prices to a T
+    info = forecast_coins[coin_id]
+    historical = yearly_historical[coin_id]
 
-    price_ts = last_prices[-prediction_time_back:][col]
-    tt = []
-    for period in range(1, 15):
-        y = np.log((price_ts/price_ts.shift(period)).dropna())
-        tdof, tloc, tscale = t.fit(y)
-        tt += [[tdof, tloc, tscale] +
-               list(np.exp(t.ppf(q=[norm.cdf(np.linspace(-3, 3, 7))], df=tdof, loc=tloc, scale=tscale)[0])) +
-               list(np.exp(t.rvs(df=tdof, loc=tloc, scale=tscale, size=100)))]
-        print(period, tdof, tloc, tscale)
+    # Get model variables
+    mcols = [c for c in info.index if 'model_' in c]
+    model_info = info[mcols]
+    model_info.name = 'values'
+    model_vars = pd.DataFrame([c.split('_')[1:] for c in mcols], columns=['model', 'timeback', 'date', 'variable'])
+    model_vars.index = mcols
+    model_results = pd.concat([model_vars, model_info], axis=1).reset_index()
+    model_results['timeback'] = model_results['timeback'].astype(int)
+    model_results['date'] = pd.to_datetime(model_results['date']).dt.date
 
-    # Format predictions
-    tt = pd.DataFrame(tt,
-                      columns=['df', 'loc', 'scale'] + [f'std{i:.0f}' for i in np.linspace(-3, 3, 7)] + [f'gain{i:02d}'
-                                                                                                         for i in
-                                                                                                         range(100)])
+    # Get standar deviation of distribution
+    model_std = model_results[(model_results['model'] == 'StudentT') &
+                              (model_results['timeback'] == time_back) &
+                              (model_results['variable'].isin([f'std{i:.0f}' for i in np.linspace(-2, 2, 5)]))]
+    model_std = model_std.pivot(index='date', columns='variable', values='values')
 
-    # Format predictions
-    predictions = last_prices[col].iloc[-1] * tt.iloc[:, 3:10]
-    predictions.index = [(pd.DatetimeIndex(last_prices.index)[-1] + datetime.timedelta(1 + i)).date().isoformat() for i
-                         in predictions.index]
-    for q in predictions.columns:
-        predictions.at[pd.DatetimeIndex(last_prices.index)[-1].date().isoformat(), q] = last_prices[col].iloc[-1]
-    predictions = predictions.sort_index()
+    # Get parameters of distribution
+    model_tparams = model_results[(model_results['model'] == 'StudentT') &
+                                  (model_results['timeback'] == time_back) &
+                                  (model_results['variable'].isin(['df', 'loc', 'scale']))]
+    model_tparams = model_tparams.pivot(index='date', columns='variable', values='values')
+
+    # Compute prediction
+    predictions = info['quote.USD.price'] * model_std
 
     # Reindex
-    last_prices.index = pd.DatetimeIndex(last_prices.index)
+    historical.index = pd.DatetimeIndex(historical.index)
     predictions.index = pd.DatetimeIndex(predictions.index)
+
+    last_prices = historical[-time_back:]
 
     # Initialize figure
     fig = go.Figure()
 
     # Real price
-    fig.add_trace(go.Scatter(name='Prices', x=last_prices.index, y=last_prices[col],
+    fig.add_trace(go.Scatter(name='Prices', x=historical.index, y=historical,
                              line=dict(color='rgba(53,130,196,1)', width=4), showlegend=False))
     if predictions['std0'].iloc[-1] > predictions['std0'].iloc[0]:
         fillcolor1 = 'rgba(0,138,32,0.4)'
@@ -760,7 +782,9 @@ def update_forecast_figure(col, n1, n2, n3, yaxis_type):
                              line=dict(color=color, width=4)))
 
     # Formatting layout
-    fig.update_layout(title=f'{forecast_coins["name"][col]} ({forecast_coins["symbol"][col]}) price prediction',
+    name = f' {info["name"]} ({info["symbol"]}) price forecast '
+
+    fig.update_layout(title=name,
                       xaxis_title='Date',
                       yaxis_title='Price ($)',
                       paper_bgcolor='rgba(0,0,0,0)',
@@ -769,33 +793,33 @@ def update_forecast_figure(col, n1, n2, n3, yaxis_type):
                       )
     xmin = predictions.index.min() - datetime.timedelta(time_back)
     xmax = predictions.index.max()
-    ymax = max(predictions.iloc[:, 1:-1].max().max(), last_prices.loc[xmin:, col].max())
-    ymin = min(predictions.iloc[:, 1:-1].min().min(), last_prices.loc[xmin:, col].min())
+    ymax = max(predictions.iloc[:, 1:-1].max().max(), last_prices.loc[xmin:].max())
+    ymin = min(predictions.iloc[:, 1:-1].min().min(), last_prices.loc[xmin:].min())
     fig.update_xaxes(range=[xmin, xmax])
     if yaxis_type == 'linear':
         fig.update_yaxes(range=[ymin, ymax])
     else:
         fig.update_yaxes(range=[np.log(ymin) / np.log(10), np.log(ymax) / np.log(10)])
 
-    description = forecast_coins["description3"][col]
-    logo = forecast_coins["logo"][col]
-    name = f' {forecast_coins["name"][col]} price forecast '
+    description = info["description3"]
+    logo = info["logo"]
+
     print('Generated forecast figure')
 
-    hist_data = [np.log((price_ts/price_ts.shift(period)).dropna()) for period in range(1,15)][::-1]
-    group_labels = [f'ROCR {n} days' for n in range(1,15)][::-1] # name of the dataset
+    hist_data = [np.log((last_prices / last_prices.shift(period)).dropna()) for period in range(1, 15)][::-1]
+    group_labels = [f'ROCR {n} days' for n in range(1, 15)][::-1]  # name of the dataset
 
-    fig2 = ff.create_distplot(hist_data, group_labels,show_hist=False)
+    fig2 = ff.create_distplot(hist_data, group_labels, show_hist=False)
 
-    fig2.update_layout(title=f'{forecast_coins["name"][col]} ({forecast_coins["symbol"][col]}) kernel density estimate of change of price',
+    fig2.update_layout(title=f'{info["name"]} ({info["symbol"]}) kernel distribution estimation of change of price',
                        xaxis_title='LOG (ROCR)',
                        yaxis_title='Probability density',
                        paper_bgcolor='rgba(0,0,0,0)',
                        plot_bgcolor='rgba(0,0,0,0)',
                        yaxis_type='linear'
                        )
-    xmin=min(hist_data[-1])
-    xmax=max(hist_data[-1])
+    xmin = min(hist_data[-1])
+    xmax = max(hist_data[-1])
     fig2.update_xaxes(range=[xmin, xmax])
     print('Generated kde figure')
     return [fig, fig2, name, logo, description, n1, n2, n3]

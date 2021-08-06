@@ -76,8 +76,7 @@ external_stylesheets = [
 
 ]
 
-theme = {"font-family": "Arial",
-         "background-color": "#e0e0e0"}
+theme = {"font-family": "Arial",}
 
 app = Dash(name=app_name, server=server,
            external_stylesheets=external_css,
@@ -228,19 +227,23 @@ def forecast():
     content = html.Div([
         html.H2('Price forecast'),
         html.Div(
-            # [html.H3('Coin forecast'), ] +
-            [dcc.Dropdown(id='forecast-coin', className='forecast-selection', options=crypto_options,
-                          value=1, placeholder='Cryptocurrencies sorted by future gains'),
-             *[html.Button(i, id=f'button-{i}', n_clicks=0, className='forecast-button') for i in ['1Y', '3M', '1M']],
-             dcc.RadioItems(id='forecast-yaxis-type', className='forecast-radio', options=[
-                 {'label': 'Linear', 'value': 'linear'},
-                 {'label': 'Logarithmic', 'value': 'log'}],
-                            value='linear'),
-             html.H2([html.Img(id='forecast-coin-logo', className='forecast-coin-logo'),
-                      html.P('Loading, please wait a few seconds', id='forecast-coin-name',
-                             className='forecast-coin-name')]),
-             dcc.Graph(id='forecast-graph', ),
-             html.P('The plot will appear here', id='forecast-coin-description'),
+            [html.Div(id='forecast-coin-selections', style=dict(display='flex'),
+                      children=[
+                          dcc.Dropdown(id='forecast-coin', className='forecast-selection',
+                                       options=crypto_options, clearable=False,
+                                       value=1, placeholder='Cryptocurrencies sorted by future gains'),
+                          *[html.Button(i, id=f'button-{i}', n_clicks=0, className='forecast-button') for i in ['1Y', '3M', '1M']],
+                          dcc.RadioItems(id='forecast-yaxis-type', className='forecast-radio', options=[
+                               {'label': 'Linear', 'value': 'linear'},
+                               {'label': 'Logarithmic', 'value': 'log'}],
+                                         value='linear', labelStyle={'display': 'inline-block'})]),
+             dcc.Loading([
+                 html.H2([html.Img(id='forecast-coin-logo', className='forecast-coin-logo'),
+                          html.P('Loading, please wait a few seconds', id='forecast-coin-name',
+                                 className='forecast-coin-name')]),
+                 dcc.Graph(id='forecast-graph', ),
+                 html.P('The plot will appear here', id='forecast-coin-description'),
+             ]),
              dcc.Store(id='forecast-data', data=df.T.to_json(date_format='iso', orient='split')),
              dcc.Store(id='forecast-data-prices', data=df2.to_json(date_format='iso', orient='split')),
              ]
@@ -250,7 +253,9 @@ def forecast():
              html.P('''To forecast the price in the future we fitted the natural logarithm of the ratio of the change in
               price "log(ROCR)" to a Student-T distribution. The following plot shows the distribution of price over the
               period used for the forecast.'''),
-             dcc.Graph(id='forecast-kde', )]
+             dcc.Loading(
+                 dcc.Graph(id='forecast-kde', ))
+             ]
         )
     ])
     return content
@@ -593,18 +598,21 @@ def serve_layout():
                                   "padding": "2rem 1rem", }
                            )
 
-    layout = html.Div((dcc.Location(id="url"),
+    layout = html.Div([dcc.Location(id="url"),
                        create_null(10),
                        create_toggle(),
-                       create_sidebar(),
-                       html.Div(
-                           children=[create_header(), content_box, create_footer()],
-                           id='cont1',
-                           className="container",
-                           style={"fontFamily": theme["font-family"]},
-                       ),
 
-                       ))
+                       create_header(),
+                       html.Div([
+                           create_sidebar(),
+                           html.Div(
+                               children=[content_box, create_footer()],
+                               id='cont1',
+                               className="container",
+                               style={"fontFamily": theme["font-family"]},
+                           ),
+                       ])
+                       ])
     return layout
 
 

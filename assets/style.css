@@ -7,6 +7,9 @@
     --theme5: #E3E7F1;
 }
 
+body{
+    margin:0px;
+}
 
 .toggle {
     top: 10px;
@@ -15,7 +18,7 @@
     height: 50px;
     display: block;
     position: absolute;
-    z-index: 1000;
+    z-index: 2000;
 }
 
 .toggle i {
@@ -65,15 +68,16 @@
     position: relative;
     overflow: hidden;
     max-width: -webkit-fill-available;
+    width: 100%;
 }
 
 .side-navigation {
     height: 100%;
     width: 0px;
     position: fixed;
-    z-index: 1;
-    top: 0;
+    top: auto;
     left: 0;
+    z-index:1000;
     background-color: var(--theme0);
     overflow-x: hidden;
     transition: 0.5s;
@@ -156,7 +160,7 @@
 
 /* Change the color of links on hover */
 .header h1 a:hover {
-    color: darkgreen;
+    color: #ffffff;
     transition: 0.3s;
 }
 
@@ -227,7 +231,7 @@
 }
 /* For desktop:*/
 /* Always open menu*/
-@media only screen and (min-width: 1000px) {
+@media only screen and (min-width: 3000px) {
     .toggle {
         display: none;
     }
@@ -251,7 +255,7 @@
 
 .forecast-selection{
     display:inline-block;
-    width:30%
+    width:250px;
 }
 
 .forecast-button{

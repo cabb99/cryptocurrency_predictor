@@ -17,7 +17,7 @@ body{
     width: 50px;
     height: 50px;
     display: block;
-    position: absolute;
+    position: fixed;
     z-index: 2000;
 }
 
@@ -75,7 +75,7 @@ body{
     height: 100%;
     width: 0px;
     position: fixed;
-    top: auto;
+    top: 60px;
     left: 0;
     z-index:1000;
     background-color: var(--theme0);
@@ -83,6 +83,7 @@ body{
     transition: 0.5s;
     padding: 1rem 0rem;
     color: white;
+
 }
 
 .side-navigation.open {
@@ -122,8 +123,13 @@ body{
 }
 
 .header {
-    margin-left:0rem;
-    margin-right:0rem;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 60px;
+    z-index: 1500;
+    margin-left: 0rem;
+    margin-right: 0rem;
     padding: 0rem 0rem;
     transition: 0.5s;
     background-color: var(--theme3);
@@ -284,5 +290,19 @@ body{
     background-attachment: fixed;
     background-position: inherit;
     background-repeat: no-repeat;
+    background-size: contain;
+}
+
+.parallax-demo2 {
+    /* The image used */
+    background-image: url('images/test_image2.png');
+
+    /* Height */
+    height: 20rem;
+
+    /* Image position and size */
+    background-attachment: fixed;
+    background-position: inherit;
+    background-repeat: repeat-y;
     background-size: contain;
 }

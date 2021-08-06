@@ -605,7 +605,7 @@ def serve_layout():
                        create_toggle(),
 
                        create_header(),
-                       html.Div([
+                       html.Div(className="main-container", children=[
                            create_sidebar(),
                            html.Div(
                                children=[content_box, create_footer()],

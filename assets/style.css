@@ -64,11 +64,10 @@ body{
     transform: rotateZ(-45deg);
 }
 
-.container {
-    position: relative;
-    overflow: hidden;
-    max-width: -webkit-fill-available;
-    width: 100%;
+.main-container{
+    position: absolute;
+    top: 60px;
+    width: -webkit-fill-available;
 }
 
 .side-navigation {
@@ -87,7 +86,7 @@ body{
 }
 
 .side-navigation.open {
-    width: 300px;
+    width: 250px;
 }
 
 .side-navigation h2 {
@@ -113,10 +112,12 @@ body{
     margin-right: 0rem;
     padding: 0rem 0rem;
     transition: 0.5s;
+    width:100%;
+    max-width: none;
 }
 
 .container.open {
-    margin-left: 300px;
+    margin-left: 250px;
     margin-right: 0rem;
     padding: 0rem 0rem;
     transition: 0.5s;
@@ -221,7 +222,8 @@ body{
     }
 
     .container.open {
-        margin-left: 50px;
+        margin-left: 0px;
+        width:100%;
     }
 }
 /* For tablets: */
@@ -233,6 +235,7 @@ body{
 
     .container.open {
         margin-left: 250px;
+        width:calc(100% - 250px);
     }
 }
 /* For desktop:*/

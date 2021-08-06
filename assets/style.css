@@ -272,3 +272,17 @@ body{
 .hidden-button{
     display:None;
 }
+
+.parallax-demo {
+    /* The image used */
+    background-image: url('images/test_image.png');
+
+    /* Height */
+    height: 20rem;
+
+    /* Image position and size */
+    background-attachment: fixed;
+    background-position: inherit;
+    background-repeat: no-repeat;
+    background-size: contain;
+}

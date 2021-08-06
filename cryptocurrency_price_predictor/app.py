@@ -185,6 +185,7 @@ def create_footer():
 
 def home():
     content = html.Div([
+        html.Div(className="parallax-demo"),
         html.H2('Overview'),
         html.P("""Cryptocurrency is a burgeoning asset class with investors flocking to invest in all types of cryptos. 
 Bitcoin by itself has been the best performing asset in the past 10 years with an annualized return of 230%.

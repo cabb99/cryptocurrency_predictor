@@ -267,11 +267,17 @@ body{
     width:250px;
 }
 
+.forecast-slider {
+    display: inline-block;
+    width: 40%;
+}
+
 .forecast-button{
     display:inline-block;
-    with:10%
-
+    with:10%;
+    vertical-align:top;
 }
+
 
 .forecast-radio{
     display:inline-block;
@@ -309,3 +315,4 @@ body{
     background-repeat: repeat-y;
     background-size: contain;
 }
+

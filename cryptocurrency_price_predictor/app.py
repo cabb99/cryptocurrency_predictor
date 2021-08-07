@@ -10,14 +10,17 @@ import plotly.figure_factory as ff
 from flask import Flask
 from dash import Dash
 from dash.dependencies import Input, Output
+from dash.exceptions import PreventUpdate
 from dotenv import load_dotenv
 
 # from scipy.stats import norm
-# from scipy.stats import t
+from scipy.stats import t
 import numpy as np
 import pandas as pd
 import datetime
-# import dash_table
+import dash_table
+import dash_table.FormatTemplate
+
 
 try:
     import exceptions
@@ -76,7 +79,7 @@ external_stylesheets = [
 
 ]
 
-theme = {"font-family": "Arial",}
+theme = {"font-family": "Arial", }
 
 app = Dash(name=app_name, server=server,
            external_stylesheets=external_css,
@@ -226,18 +229,137 @@ def forecast():
     crypto_options = list(df[['label', 'value']].T.to_dict().values())
     # print(crypto_options)
 
+    # time_back = 30
+    # q1 = 0.75
+    # q2 = 0.4
+    # max_date = pd.DatetimeIndex([c.split('_')[3] for c in df.columns if 'model_' in c])[8].date().isoformat()
+    # df_list = df.loc[:, f'model_StudentT_{time_back}_{max_date}_df']
+    # loc_list = df.loc[:, f'model_StudentT_{time_back}_{max_date}_loc']
+    # scale_list = df.loc[:, f'model_StudentT_{time_back}_{max_date}_scale']
+    # predicted_change_max = np.array(
+    #     [np.exp(t.ppf(q=q1, df=df, loc=loc, scale=scale)) for (df, loc, scale) in zip(df_list, loc_list, scale_list)])
+    # predicted_change_min = np.array(
+    #     [np.exp(t.ppf(q=q2, df=df, loc=loc, scale=scale)) for (df, loc, scale) in zip(df_list, loc_list, scale_list)])
+    # small_table = df[['name', 'symbol', 'quote.USD.market_cap', 'quote.USD.price']]
+    # small_table['predicted_change_min'] = predicted_change_min
+    # small_table['predicted_change_max'] = predicted_change_max
+    #
+    # small_table['predicted_change'] = (predicted_change_max * predicted_change_min) ** .5
+    # # small_table.sort_values('predicted_change',ascending=False)
+    # small_table[small_table['quote.USD.market_cap'] > 1E9].sort_values('predicted_change', ascending=False)
+    # small_table = small_table.sort_values('predicted_change', ascending=False)
+    # small_table.columns = ["Name", "symbol", "Market cap (millions USD)", "Price (USD)", "Minimum predicted change",
+    #                        "Maximum Predicted change", "Predicted change"]
+    # small_table["Market cap (millions USD)"] = np.round((small_table["Market cap (millions USD)"] / 1E6), 2)
+    # small_table["Price (USD)"] = small_table["Price (USD)"].round(2)
+    # small_table['id'] = small_table.index
+    #
+    # small_table["Minimum predicted change"] = small_table[f"Minimum predicted change"] - 1
+    # small_table["Maximum Predicted change"] = small_table[f"Maximum Predicted change"] - 1
+    # small_table["Predicted change"] = small_table["Predicted change"] - 1
+    # small_table.columns = ["name", "symbol", "market_cap", "price",
+    #                        "max_change", "min_change", "estimated", "id"]
+
+    money = dash_table.FormatTemplate.money(2)
+    percentage = dash_table.FormatTemplate.percentage(2)
     content = html.Div([
         html.H2('Price forecast'),
+        html.P("We calculate the estimated price in the future by fitting the past price changes using a Student-T "
+               "distribution. Use the slider to select the prediction for two quantiles of the distribution. The table "
+               "will be sorted by calculating the geometric mean of the two quantiles. Use the buttons to select the "
+               "number of price changes taked into account to make the distribution."
+               ),
+        html.Div(id='forecast-table-parameters', children=[
+            dcc.RangeSlider(id='forecast-risk',
+                            className='forecast-slider',
+                            value=[0.4, 0.75],
+                            min=0.01, max=0.99, step=0.01,
+                            pushable=0.05,
+                            marks={
+                                0.01: {'label': '1%', 'style': {'color': '#000000'}},
+                                0.25: {'label': '25%', 'style': {'color': '#444444'}},
+                                0.50: {'label': '50%', 'style': {'color': '#000044'}},
+                                0.75: {'label': '75%', 'style': {'color': '#444444'}},
+                                0.99: {'label': '99%', 'style': {'color': '#000000'}},
+                            }
+                            ),
+            *[html.Button(i, id=f'button-{i}', n_clicks=0, className='forecast-button') for i in
+              ['1Y', '3M', '1M']]]),
+        dash_table.DataTable(id='forecast-table',
+                             columns=[
+                                 #dict(id='id', name='id'),
+                                 dict(id='name', name='Name', type='numeric',
+                                      selectable=False),
+                                 dict(id='symbol', name='Symbol', type='numeric', ),
+                                 dict(id='market_cap', name='Market cap (millions USD)', type='numeric',
+                                      format=money, ),
+                                 dict(id='price', name='Price (USD)', type='numeric', format=money, ),
+                                 dict(id='max_change', name='Predicted change max', type='numeric',
+                                      format=percentage, ),
+                                 dict(id='min_change', name='Predicted change min', type='numeric',
+                                      format=percentage, ),
+                                 dict(id='estimated', name='Estimated change', type='numeric', format=percentage, ),
+                             ],
+                             sort_action="native",
+                             sort_mode="single",
+                             filter_action='native',
+                             row_selectable='single',
+                             data=[], #small_table.to_dict('records'),
+                             fixed_rows={'headers': True},
+                             style_table={'height': 400},
+                             style_data_conditional=[
+                                 {
+                                     'if': {
+                                         'filter_query': '{estimated} > 0',
+                                         'column_id': 'estimated'
+                                     },
+                                     'color': 'green'
+                                 },
+                                 {
+                                     'if': {
+                                         'filter_query': '{estimated} < 0',
+                                         'column_id': 'estimated'
+                                     },
+                                     'color': 'red'
+                                 },
+                                 {
+                                     'if': {
+                                         'filter_query': '{max_change} > 0',
+                                         'column_id': 'max_change'
+                                     },
+                                     'color': 'green'
+                                 },
+                                 {
+                                     'if': {
+                                         'filter_query': '{max_change} < 0',
+                                         'column_id': 'max_change'
+                                     },
+                                     'color': 'red'
+                                 },
+                                 {
+                                     'if': {
+                                         'filter_query': '{min_change} > 0',
+                                         'column_id': 'min_change'
+                                     },
+                                     'color': 'green'
+                                 },
+                                 {
+                                     'if': {
+                                         'filter_query': '{min_change} < 0',
+                                         'column_id': 'min_change'
+                                     },
+                                     'color': 'red'
+                                 }, ]
+                             ),
         html.Div(
             [html.Div(id='forecast-coin-selections', style=dict(display='flex'),
                       children=[
                           dcc.Dropdown(id='forecast-coin', className='forecast-selection',
                                        options=crypto_options, clearable=False,
                                        value=1, placeholder='Cryptocurrencies sorted by future gains'),
-                          *[html.Button(i, id=f'button-{i}', n_clicks=0, className='forecast-button') for i in ['1Y', '3M', '1M']],
                           dcc.RadioItems(id='forecast-yaxis-type', className='forecast-radio', options=[
-                               {'label': 'Linear', 'value': 'linear'},
-                               {'label': 'Logarithmic', 'value': 'log'}],
+                              {'label': 'Linear', 'value': 'linear'},
+                              {'label': 'Logarithmic', 'value': 'log'}],
                                          value='linear', labelStyle={'display': 'inline-block'})]),
              dcc.Loading([
                  html.H2([html.Img(id='forecast-coin-logo', className='forecast-coin-logo'),
@@ -658,16 +780,100 @@ def render_page_content(pathname):
 
 
 # Show memory table
-from dash.exceptions import PreventUpdate
 
+
+
+# @app.callback(Output('forecast-table', 'data'),
+#               Input('forecast-data', 'data'))
+# def on_data_set_table(data):
+#     if data is None:
+#         raise PreventUpdate
+#
+#     return data
 
 @app.callback(Output('forecast-table', 'data'),
-              Input('forecast-data', 'data'))
-def on_data_set_table(data):
-    if data is None:
-        raise PreventUpdate
+              Input('forecast-data', 'data'),
+              Input('forecast-data-prices', 'data'),
+              Input('button-1Y', 'n_clicks'),
+              Input('button-3M', 'n_clicks'),
+              Input('button-1M', 'n_clicks'),
+              Input('forecast-risk', 'value'))
+def update_forecast_table(coin_data, price_data, n1, n2, n3, slider_values):
+    if n1 == 0:
+        time_back = 365
+    elif n2 == 0:
+        time_back = 30 * 3
+    elif n3 == 0:
+        time_back = 30
+    elif n1 > 0:
+        time_back = 365
+    elif n2 > 0:
+        time_back = 30 * 3
+    else:
+        time_back = 30
 
-    return data
+    q1, q2 = slider_values
+
+    df = pd.read_json(coin_data, orient='split').T
+
+    # df = pd.read_csv('s3://ds4a-team151/Modelled_coins.csv', index_col=0)
+    # df2 = pd.read_csv('s3://ds4a-team151/Modelled_coins_prices.csv', index_col='date')
+
+    # time_back = 30
+    # q1 = 0.75
+    # q2 = 0.4
+    max_date = pd.DatetimeIndex([c.split('_')[3] for c in df.columns if 'model_' in c])[8].date().isoformat()
+    df_list = df.loc[:, f'model_StudentT_{time_back}_{max_date}_df']
+    loc_list = df.loc[:, f'model_StudentT_{time_back}_{max_date}_loc']
+    scale_list = df.loc[:, f'model_StudentT_{time_back}_{max_date}_scale']
+    predicted_change_max = np.array(
+        [np.exp(t.ppf(q=q1, df=df, loc=loc, scale=scale)) for (df, loc, scale) in zip(df_list, loc_list, scale_list)])
+    predicted_change_min = np.array(
+        [np.exp(t.ppf(q=q2, df=df, loc=loc, scale=scale)) for (df, loc, scale) in zip(df_list, loc_list, scale_list)])
+    small_table = df[['name', 'symbol', 'quote.USD.market_cap', 'quote.USD.price']]
+    small_table['predicted_change_min'] = predicted_change_min
+    small_table['predicted_change_max'] = predicted_change_max
+
+    small_table['predicted_change'] = (predicted_change_max * predicted_change_min) ** .5
+    # small_table.sort_values('predicted_change',ascending=False)
+    # small_table[small_table['quote.USD.market_cap'] > 1E9].sort_values('predicted_change', ascending=False)
+    small_table = small_table.sort_values('predicted_change', ascending=False)
+    small_table.columns = ["Name", "symbol", "Market cap (millions USD)", "Price (USD)", "Minimum predicted change",
+                           "Maximum Predicted change", "Predicted change"]
+    # print(len(small_table))
+    # print([round(a,2) for a in small_table["Market cap (millions USD)"].sort_values()])
+    small_table["Market cap (millions USD)"] = (small_table["Market cap (millions USD)"] / 1E6).astype(float).round(2)
+    small_table["Price (USD)"] = small_table["Price (USD)"].astype(float).round(2)
+    small_table['id'] = small_table.index
+
+    small_table["Minimum predicted change"] = small_table[f"Minimum predicted change"] - 1
+    small_table["Maximum Predicted change"] = small_table[f"Maximum Predicted change"] - 1
+    small_table["Predicted change"] = small_table["Predicted change"] - 1
+    small_table.columns = ["name", "symbol", "market_cap", "price",
+                           "max_change", "min_change", "estimated", "id"]
+    #print(small_table)
+    return small_table.to_dict('records')
+    #return {}
+
+
+@app.callback(
+    Output('forecast-table', 'selected_row_ids'),
+    Input('forecast-table', 'active_cell'))
+def select_row(active_cell):
+    if active_cell is None:
+        raise PreventUpdate
+    return [active_cell['row_id']]
+
+
+@app.callback(
+    Output('forecast-coin', 'value'),
+    Input('forecast-table', 'selected_row_ids'),
+)
+def test(selected):
+    if selected is None:
+        raise PreventUpdate
+    print(selected)
+    return selected[0]
 
 
 @app.callback([

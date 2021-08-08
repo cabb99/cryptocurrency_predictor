@@ -21,7 +21,6 @@ import datetime
 import dash_table
 import dash_table.FormatTemplate
 
-
 try:
     import exceptions
 except ImportError:
@@ -264,10 +263,12 @@ def forecast():
     percentage = dash_table.FormatTemplate.percentage(2)
     content = html.Div([
         html.H2('Price forecast'),
-        html.P("We calculate the estimated price in the future by fitting the past price changes using a Student-T "
-               "distribution. Use the slider to select the prediction for two quantiles of the distribution. The table "
+        html.P("We calculate the estimated price in the future by fitting the past price changes using a Student's T "
+               "distribution, allowing us to predict the distribution of the price change in the future. "
+               "Use the slider to select the prediction for two quantiles of the distribution. The table "
                "will be sorted by calculating the geometric mean of the two quantiles. Use the buttons to select the "
-               "number of price changes taked into account to make the distribution."
+               "number of price changes taken into account to make the distribution. "
+               "Feel free to sort and filter by name, marketcap or price change."
                ),
         html.Div(id='forecast-table-parameters', children=[
             dcc.RangeSlider(id='forecast-risk',
@@ -287,7 +288,7 @@ def forecast():
               ['1Y', '3M', '1M']]]),
         dash_table.DataTable(id='forecast-table',
                              columns=[
-                                 #dict(id='id', name='id'),
+                                 # dict(id='id', name='id'),
                                  dict(id='name', name='Name', type='numeric',
                                       selectable=False),
                                  dict(id='symbol', name='Symbol', type='numeric', ),
@@ -304,7 +305,7 @@ def forecast():
                              sort_mode="single",
                              filter_action='native',
                              row_selectable='single',
-                             data=[], #small_table.to_dict('records'),
+                             data=[],  # small_table.to_dict('records'),
                              fixed_rows={'headers': True},
                              style_table={'height': 400},
                              style_data_conditional=[
@@ -373,12 +374,15 @@ def forecast():
              ]
         ),
         html.Div(
-            [html.H3('Distribution of price change'),
+            [html.H3('Distribution of change in price'),
              html.P('''To forecast the price in the future we fitted the natural logarithm of the ratio of the change in
-              price "log(ROCR)" to a Student-T distribution. The following plot shows the distribution of price over the
-              period used for the forecast.'''),
+              price "log(ROCR)" to a Student's T distribution. The following plots shows the distribution of price over the
+              period used for the forecast and how the quantiles observed compare to the quantiles predicted by the 
+              Student's T distrubution'''),
              dcc.Loading(
-                 dcc.Graph(id='forecast-kde', ))
+                 dcc.Graph(id='forecast-kde', className='forecast-kde')),
+             dcc.Loading(
+                 dcc.Graph(id='forecast-QQ', className='forecast-QQ'))
              ]
         )
     ])
@@ -782,7 +786,6 @@ def render_page_content(pathname):
 # Show memory table
 
 
-
 # @app.callback(Output('forecast-table', 'data'),
 #               Input('forecast-data', 'data'))
 # def on_data_set_table(data):
@@ -851,9 +854,9 @@ def update_forecast_table(coin_data, price_data, n1, n2, n3, slider_values):
     small_table["Predicted change"] = small_table["Predicted change"] - 1
     small_table.columns = ["name", "symbol", "market_cap", "price",
                            "max_change", "min_change", "estimated", "id"]
-    #print(small_table)
+    # print(small_table)
     return small_table.to_dict('records')
-    #return {}
+    # return {}
 
 
 @app.callback(
@@ -879,6 +882,7 @@ def test(selected):
 @app.callback([
     Output('forecast-graph', 'figure'),
     Output('forecast-kde', 'figure'),
+    Output('forecast-QQ', 'figure'),
     Output('forecast-coin-name', 'children'),
     Output('forecast-coin-logo', 'src'),
     Output('forecast-coin-description', 'children'),
@@ -1023,7 +1027,7 @@ def update_forecast_figure(coin_data, price_data, coin_id, n1, n2, n3, yaxis_typ
     print('Generated forecast figure')
 
     hist_data = [np.log((last_prices / last_prices.shift(period)).dropna()) for period in range(1, 15)][::-1]
-    group_labels = [f'ROCR {n} days' for n in range(1, 15)][::-1]  # name of the dataset
+    group_labels = [f'{n} day{"s" if n > 1 else ""}' for n in range(1, 15)][::-1]  # name of the dataset
 
     fig2 = ff.create_distplot(hist_data, group_labels, show_hist=False)
 
@@ -1034,11 +1038,55 @@ def update_forecast_figure(coin_data, price_data, coin_id, n1, n2, n3, yaxis_typ
                        plot_bgcolor='rgba(0,0,0,0)',
                        yaxis_type='linear'
                        )
+
+    for trace in fig2.select_traces():
+        if trace.legendgroup not in ['1 day', '3 days', '14 days']:
+            trace.visible = 'legendonly'
+
     xmin = min(hist_data[-1])
     xmax = max(hist_data[-1])
     fig2.update_xaxes(range=[xmin, xmax])
     print('Generated kde figure')
-    return [fig, fig2, name, logo, description, n1, n2, n3]
+
+    # Initialize figure
+    fig3 = go.Figure()
+
+    q_data2 = []
+    for i, (date, (df, loc, scale)) in enumerate(model_tparams[::-1].iloc[:-1, :].iterrows()):
+        x = hist_data[i].sort_values()
+        q_list = np.arange(len(x)) / (len(x) + 1) + 0.5 / (len(x) + 1)
+        theoretical_x = [t.ppf(q=q, df=df, loc=loc, scale=scale) for q in q_list]
+        fig3.add_trace(go.Scatter(name=group_labels[i], x=theoretical_x, y=x, showlegend=True, mode='markers'))
+
+        # plt.scatter(theoretical_x,x)
+        q_data = pd.DataFrame(np.array([q_list, x, theoretical_x]).T, columns=['q', 'real', 'theoretical'])
+        q_data['label'] = group_labels[i]
+        q_data2 += [q_data]
+
+    q_data = pd.concat(q_data2)
+    xmin = q_data[['real', 'theoretical']].min().min()
+    xmax = q_data[['real', 'theoretical']].max().max()
+    xmin = min(xmin, -xmax) * 1.02
+    xmax = max(-xmin, xmax) * 1.02
+
+    fig3.add_trace(go.Scatter(name='theoretical', x=[xmin, xmax], y=[xmin, xmax], showlegend=False))
+    fig3.update_xaxes(range=[xmin, xmax])
+    fig3.update_yaxes(range=[xmin, xmax])
+
+    # Formatting layout
+    fig3.update_layout(title=f'{info["name"]} ({info["symbol"]}) Q-Q plot ',
+                       xaxis_title='Theoretical quantiles',
+                       yaxis_title='Observed quantiles',
+                       paper_bgcolor='rgba(0,0,0,0)',
+                       plot_bgcolor='rgba(0,0,0,0)',
+                       )
+
+    for trace in fig3.select_traces():
+        if trace.name not in ['1 day', '3 days', '14 days', 'theoretical']:
+            trace.visible = 'legendonly'
+    print('Generated qq figure')
+
+    return [fig, fig2, fig3, name, logo, description, n1, n2, n3]
 
 
 #########################

@@ -410,6 +410,16 @@ def forecast():
 def historical():
     content = html.Div([
         html.H2('Historical prices'),
+        html.P("""The price history of coins reveals a lot about the challenges in accurately predicing price trends. 
+        Crypto as an investment class first hit the mainstream in 2018 and there was a general uptick in the price 
+        of most coins; however, the magnitude of changes in price were unpredictable. Coins like Ripple (XRP) experienced a 
+        meteoric rise in price and an equally precipitous fall in value with a few months, while other cryptos like Bitcoin (BTC) 
+        exhibited a bit more resilience. Similarly, in the most recent bull market there's a general uptrend, but only certain coins
+        likey BTC and ETH surpass all time highs while others like XRP don't come close. Dogecoin was a significant outlier with an 
+        absurd increase in price in the past year. The level of volatility and spculation in the crypto markets makes it possible to 
+        identify a price trend, particularly over longer time periods, but it is nearly impossible to quantify the magnitude of the 
+        trend in shorter time periods."""
+               ),
         html.Hr(),
         html.Div([
             html.Button(id='activate_tableau_viz1628020240288', className='hidden-button'),

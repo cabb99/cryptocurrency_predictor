@@ -264,24 +264,24 @@ body{
 
 .forecast-selection{
     display:inline-block;
-    width:250px;
+    width:100%;
 }
 
 .forecast-slider {
     display: inline-block;
-    width: 40%;
+    width: 90%;
 }
 
 .forecast-button{
     display:inline-block;
-    with:10%;
+    width:30%;
     vertical-align:top;
 }
 
 
 .forecast-radio{
     display:inline-block;
-    width:30%
+    width:100%
 }
 
 .hidden-button{

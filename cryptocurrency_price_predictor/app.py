@@ -6,6 +6,7 @@ import dash_html_components as html
 # import chart_studio.plotly as py
 import plotly.graph_objs as go
 import plotly.figure_factory as ff
+from plotly.subplots import make_subplots
 
 from flask import Flask
 from dash import Dash
@@ -115,8 +116,8 @@ def create_sidebar():
                                 href="/forecast", id="page-1-link", className="page-link"),
                     dbc.NavLink([html.I(className="fas fa-chart-bar"), " Historical"],
                                 href="/historical", id="page-2-link", className="page-link"),
-                    # dbc.NavLink([html.I(className="fas fa-microscope"), " Indicators"],
-                    #            href="/indicators", id="page-3-link", className="page-link"),
+                    dbc.NavLink([html.I(className="fas fa-microscope"), " Indicators"],
+                                href="/indicators", id="page-3-link", className="page-link"),
                     # dbc.NavLink([html.I(className="fas fa-coins"), " Coins"],
                     #            href="/coins", id="page-4-link", className="page-link"),
                     # dbc.NavLink([html.I(className="fas fa-chart-pie"), " Market Cap"],
@@ -226,39 +227,6 @@ def forecast():
     df['label'] = [f'{c["name"]} ({c["symbol"]})' for ii, c in df.iterrows()]
     df['value'] = df.index
     crypto_options = list(df[['label', 'value']].T.to_dict().values())
-    # print(crypto_options)
-
-    # time_back = 30
-    # q1 = 0.75
-    # q2 = 0.4
-    # max_date = pd.DatetimeIndex([c.split('_')[3] for c in df.columns if 'model_' in c])[8].date().isoformat()
-    # df_list = df.loc[:, f'model_StudentT_{time_back}_{max_date}_df']
-    # loc_list = df.loc[:, f'model_StudentT_{time_back}_{max_date}_loc']
-    # scale_list = df.loc[:, f'model_StudentT_{time_back}_{max_date}_scale']
-    # predicted_change_max = np.array(
-    #     [np.exp(t.ppf(q=q1, df=df, loc=loc, scale=scale)) for (df, loc, scale) in zip(df_list, loc_list, scale_list)])
-    # predicted_change_min = np.array(
-    #     [np.exp(t.ppf(q=q2, df=df, loc=loc, scale=scale)) for (df, loc, scale) in zip(df_list, loc_list, scale_list)])
-    # small_table = df[['name', 'symbol', 'quote.USD.market_cap', 'quote.USD.price']]
-    # small_table['predicted_change_min'] = predicted_change_min
-    # small_table['predicted_change_max'] = predicted_change_max
-    #
-    # small_table['predicted_change'] = (predicted_change_max * predicted_change_min) ** .5
-    # # small_table.sort_values('predicted_change',ascending=False)
-    # small_table[small_table['quote.USD.market_cap'] > 1E9].sort_values('predicted_change', ascending=False)
-    # small_table = small_table.sort_values('predicted_change', ascending=False)
-    # small_table.columns = ["Name", "symbol", "Market cap (millions USD)", "Price (USD)", "Minimum predicted change",
-    #                        "Maximum Predicted change", "Predicted change"]
-    # small_table["Market cap (millions USD)"] = np.round((small_table["Market cap (millions USD)"] / 1E6), 2)
-    # small_table["Price (USD)"] = small_table["Price (USD)"].round(2)
-    # small_table['id'] = small_table.index
-    #
-    # small_table["Minimum predicted change"] = small_table[f"Minimum predicted change"] - 1
-    # small_table["Maximum Predicted change"] = small_table[f"Maximum Predicted change"] - 1
-    # small_table["Predicted change"] = small_table["Predicted change"] - 1
-    # small_table.columns = ["name", "symbol", "market_cap", "price",
-    #                        "max_change", "min_change", "estimated", "id"]
-
     money = dash_table.FormatTemplate.money(2)
     percentage = dash_table.FormatTemplate.percentage(2)
     content = html.Div([
@@ -270,22 +238,44 @@ def forecast():
                "number of price changes taken into account to make the distribution. "
                "Feel free to sort and filter by name, marketcap or price change."
                ),
+        html.Table([
+            html.Thead([
+                html.Tr([
+                    html.Th([
+                        'Confidence interval'
+                    ], style={'width': '70%'}),
+                    html.Th([
+                        'Time back'
+                    ], style={'width': '30%'}),
+                ]),
+            ]),
+            html.Tbody([
+                html.Tr([
+                    html.Th([
+                        dcc.RangeSlider(id='forecast-risk',
+                                        className='forecast-slider',
+                                        value=[0.4, 0.75],
+                                        min=0.01, max=0.99, step=0.01,
+                                        pushable=0.05,
+                                        marks={
+                                            0.01: {'label': '1%', 'style': {'color': '#000000'}},
+                                            0.25: {'label': '25%', 'style': {'color': '#444444'}},
+                                            0.50: {'label': '50%', 'style': {'color': '#000044'}},
+                                            0.75: {'label': '75%', 'style': {'color': '#444444'}},
+                                            0.99: {'label': '99%', 'style': {'color': '#000000'}},
+                                        }
+                                        ),
+                    ]),
+                    html.Th([
+                        *[html.Button(i, id=f'button-{i}', n_clicks=0, className='forecast-button') for i in
+                          ['1Y', '3M', '1M']]
+                    ]),
+                ]),
+            ])
+        ], style={'width': '90%'}),
         html.Div(id='forecast-table-parameters', children=[
-            dcc.RangeSlider(id='forecast-risk',
-                            className='forecast-slider',
-                            value=[0.4, 0.75],
-                            min=0.01, max=0.99, step=0.01,
-                            pushable=0.05,
-                            marks={
-                                0.01: {'label': '1%', 'style': {'color': '#000000'}},
-                                0.25: {'label': '25%', 'style': {'color': '#444444'}},
-                                0.50: {'label': '50%', 'style': {'color': '#000044'}},
-                                0.75: {'label': '75%', 'style': {'color': '#444444'}},
-                                0.99: {'label': '99%', 'style': {'color': '#000000'}},
-                            }
-                            ),
-            *[html.Button(i, id=f'button-{i}', n_clicks=0, className='forecast-button') for i in
-              ['1Y', '3M', '1M']]]),
+
+        ]),
         dash_table.DataTable(id='forecast-table',
                              columns=[
                                  # dict(id='id', name='id'),
@@ -352,27 +342,44 @@ def forecast():
                                      'color': 'red'
                                  }, ]
                              ),
-        html.Div(
-            [html.Div(id='forecast-coin-selections', style=dict(display='flex'),
-                      children=[
-                          dcc.Dropdown(id='forecast-coin', className='forecast-selection',
-                                       options=crypto_options, clearable=False,
-                                       value=1, placeholder='Cryptocurrencies sorted by future gains'),
-                          dcc.RadioItems(id='forecast-yaxis-type', className='forecast-radio', options=[
-                              {'label': 'Linear', 'value': 'linear'},
-                              {'label': 'Logarithmic', 'value': 'log'}],
-                                         value='linear', labelStyle={'display': 'inline-block'})]),
-             dcc.Loading([
-                 html.H2([html.Img(id='forecast-coin-logo', className='forecast-coin-logo'),
-                          html.P('Loading, please wait a few seconds', id='forecast-coin-name',
-                                 className='forecast-coin-name')]),
-                 dcc.Graph(id='forecast-graph', ),
-                 html.P('The plot will appear here', id='forecast-coin-description'),
-             ]),
-             dcc.Store(id='forecast-data', data=df.T.to_json(date_format='iso', orient='split')),
-             dcc.Store(id='forecast-data-prices', data=df2.to_json(date_format='iso', orient='split')),
-             ]
-        ),
+
+        html.Div(id='forecast-coin-selections', style=dict(display='inline-block', width='100%'), children=[
+            html.Table([
+                html.Thead([
+                    html.Tr([
+                        html.Th([
+                            'Cryptocurrency'
+                        ]),
+                        html.Th([
+                            'Y axis'
+                        ]),
+                    ]),
+                ]),
+                html.Tbody([
+                    html.Tr([
+                        html.Th([
+                            dcc.Dropdown(id='forecast-coin', className='forecast-selection',
+                                         options=crypto_options, clearable=False,
+                                         value=1, placeholder='Cryptocurrencies sorted by future gains'),
+                        ]),
+                        html.Th([
+                            dcc.RadioItems(id='forecast-yaxis-type', className='forecast-radio', options=[
+                                {'label': 'Linear', 'value': 'linear'},
+                                {'label': 'Logarithmic', 'value': 'log'}],
+                                           value='linear', labelStyle={'display': 'inline-block'})]),
+                    ])
+                ]),
+            ], style={'width': '90%'}),
+            dcc.Loading([
+                html.H2([html.Img(id='forecast-coin-logo', className='forecast-coin-logo'),
+                         html.P('Loading, please wait a few seconds', id='forecast-coin-name',
+                                className='forecast-coin-name')]),
+                dcc.Graph(id='forecast-graph', ),
+                html.P('The plot will appear here', id='forecast-coin-description'),
+            ]),
+            dcc.Store(id='forecast-data', data=df.T.to_json(date_format='iso', orient='split')),
+            dcc.Store(id='forecast-data-prices', data=df2.to_json(date_format='iso', orient='split')),
+        ]),
         html.Div(
             [html.H3('Distribution of change in price'),
              html.P('''To forecast the price in the future we fitted the natural logarithm of the ratio of the change in
@@ -494,12 +501,73 @@ def historical():
 
 
 def indicators():
+    indicator_options = [{'label': 'Bitcoin (BTC)', 'value': 'BTC'}]
+    groups=[
+        'Future ROCR',
+        'Future NATR',
+        'Future ROCR distribution',
+        'Difference between future and past ROCR distribution',
+        'Present ROCR distribution',
+        'Past ROCR distribution',
+        'Historical ROCR',
+        'Historical NATR',
+        'OHLC',
+        'Price Transform indicators',
+        'Momentum Indicators',
+        'Overlap Studies',
+        'Volatility Indicators',
+        'Volume Indicators',
+        'Statistic Indicators',
+        'Cycle Indicators',
+        'Pattern Recognition',
+        'Pattern Recognition States',
+        'Market Indicators',
+        'Twitter tweet volume',
+        'Google trends',
+        'Federal Reserve bonds',
+        'Covid infections',
+    ]
+    indicator_groups = [{'label': g, 'value': g} for g in groups]
     content = html.Div([
         html.H2('Indicators'),
         html.Hr(),
-        html.Div([
-            html.Div('Correlation Matrix for each crypto with all indicators', className='placeholder')
-        ])
+        html.Table(id='indicator_selections', children=[
+            html.Thead(children=[
+                html.Tr([
+                    html.Th([
+                        'Cryptocurrency'
+                    ], style={'width': '40%'}),
+                    html.Th(colSpan=2, children=[
+                        'Indicator Groups'
+                    ], style={'width': '60%'}),
+                ])
+            ]),
+            html.Tbody([
+                html.Tr([
+                    html.Th([
+                        dcc.Dropdown(id='indicator-coin', className='indicator-dropdown', options=indicator_options,
+                        value='BTC',clearable=False),
+
+                    ]),
+                    html.Th([
+                        dcc.Dropdown(id='indicator-group1', className='indicator-dropdown', options=indicator_groups,
+                                     value='Future ROCR distribution', clearable=False),
+                    ]),
+                    html.Th([
+                        dcc.Dropdown(id='indicator-group2', className='indicator-dropdown', options=indicator_groups,
+                                     value='Past ROCR distribution', clearable=False),
+                    ]),
+                ]),
+
+            ])
+        ], style={'width': '90%'}),
+        html.P(id='indicator-description'),
+        dcc.Loading(dcc.Graph(id='indicator-correlation')),
+        html.H3('Relationship between indicators'),
+        html.H4(id='indicator-comparison-tittle',children='A vs B'),
+        dcc.Graph(id='indicator-regplot'),
+        dcc.Graph(id='indicator-timeplot'),
+        dcc.Store(id='indicator-data',)
     ])
     return content
 
@@ -803,6 +871,96 @@ def render_page_content(pathname):
 #         raise PreventUpdate
 #
 #     return data
+
+@app.callback(Output('indicator-comparison-tittle','children'),
+              Output('indicator-regplot','figure'),
+              Output('indicator-timeplot','figure'),
+              Input('indicator-data','data'),
+              Input('indicator-correlation','clickData'),
+              Input('indicator-group1','value'),
+              Input('indicator-group2','value'),)
+
+def update_indicator_regression(data, clickData, group1, group2):
+    if clickData is None:
+        raise PreventUpdate
+    df = pd.read_json(data, orient='split')
+    df.columns = pd.MultiIndex.from_tuples([a.split("<>") for a in df.columns])
+    print(clickData)
+    sel1 = clickData['points'][0]['x']
+    sel2 = clickData['points'][0]['y']
+    tname = f'{group1}: {sel1} vs {group2}: {sel2}'
+    fig2=go.Figure()
+    fig2.add_trace(go.Scatter(x=df[(group1, sel1)],
+                              y=df[(group2, sel2)],
+                              mode='markers',
+                              text=df.index,
+                              hovertemplate=f"<b>Date</b> : %{{text}}<br><i>{group1} ({sel1})</i>: %{{x}}<br><i>{group2} ({sel2})</i>: %{{y}}",
+                              marker=dict(
+                                  color=pd.to_datetime(df.index).view(int), #set color equal to a variable
+                                  colorscale='Viridis', # one of plotly colorscales
+                                  showscale=False
+                              ),
+                              ))
+    fig2.update_layout(title=tname,
+                       xaxis_title=f'{group1}: {sel1}',
+                       yaxis_title=f'{group2}: {sel2}',
+                       paper_bgcolor='rgba(0,0,0,0)',
+                       plot_bgcolor='rgba(0,0,0,0)',
+                       )
+    fig3 = make_subplots(specs=[[{"secondary_y": True}]])
+
+    fig3.add_trace(go.Scatter(x=df.index,
+                              y=df[(group1, sel1)],
+                              name=f'{group1}: {sel1}',
+                              ),secondary_y=False,)
+    fig3.add_trace(go.Scatter(x=df.index,
+                              y=df[(group2, sel2)],
+                              name=f'{group2}: {sel2}'
+                              ),secondary_y=True,)
+    fig3.update_layout(title=tname,
+                       xaxis_title=f'Date',
+                       yaxis_title=f'{group1}: {sel1}',
+                       paper_bgcolor='rgba(0,0,0,0)',
+                       plot_bgcolor='rgba(0,0,0,0)',
+                       )
+    fig3.update_yaxes(title_text=f'{group2}: {sel2}', secondary_y=True)
+    return tname,fig2, fig3
+
+@app.callback(Output('indicator-data','data'),
+              Input('indicator-coin','value'))
+def update_indicator_data(coin):
+    df = pd.read_csv(f's3://ds4a-team151/Alldata_{coin}.csv',
+                     header=[0, 1], index_col=0)
+    df.columns=[f"{a}<>{b}" for a,b in df.columns]
+    return df.to_json(date_format='iso', orient='split')
+
+@app.callback(Output('indicator-correlation','figure'),
+              Output('indicator-correlation','style'),
+              Input('indicator-data','data'),
+              Input('indicator-group1','value'),
+              Input('indicator-group2','value'),
+              )
+def update_indicator_correlation(data,group1, group2):
+    df = pd.read_json(data, orient='split')
+    df.columns = pd.MultiIndex.from_tuples([a.split("<>") for a in df.columns])
+    group1_cols = [(group1, a) for a in df[group1].columns]
+    group2_cols = [(group2, a) for a in df[group2].columns]
+    sel = df.loc[:, group1_cols+group2_cols]
+    corr = sel.corr().loc[group2,group1]
+    corr=corr.dropna(how='all',axis=0).dropna(how='all',axis=1)
+    fig = go.Figure()
+    fig.add_trace(go.Heatmap(
+        y=corr.index,
+        x=corr.columns,
+        z=corr,
+        hoverongaps=False,
+        hovertemplate=f"<b>Correlation</b> :  %{{z:.2f}}<br><i>{group1}</i>: %{{x}}<br><i>{group2}</i>: %{{y}}",
+        colorscale='RdBu_r',
+        zmin=-1, zmax=1,))
+
+    heigth=max(len(group2_cols)*20,450)
+    return fig,{'height':f'{heigth}px'}
+
 
 @app.callback(Output('forecast-table', 'data'),
               Input('forecast-data', 'data'),

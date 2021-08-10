@@ -918,7 +918,7 @@ def update_indicator_regression(data, clickData, group1, group2):
                               y=y_lin,
                               mode='lines',
                               text=df.index,
-                              hovertemplate=f"<b>R2</b> : {r_value**2}<br><b>R</b> : {r_value}<br><b>Slope</b> : {slope}<br><b>Intercept</b> : {intercept}<br><b>p-value</b> : {p_value}<br>",
+                              hovertemplate=f"<b>R2</b> : {r_value**2:.2f}<br><b>R</b> : {r_value:.2f}<br><b>Slope</b> : {slope:.2f}<br><b>Intercept</b> : {intercept:.2f}<br><b>p-value</b> : {p_value:.5f}<br>",
                               showlegend=False
                               ))
 

@@ -501,8 +501,12 @@ def historical():
 
 
 def indicators():
-    indicator_options = [{'label': 'Bitcoin (BTC)', 'value': 'BTC'}]
-    groups=[
+    indicator_options = [{'label': 'Bitcoin (BTC)', 'value': 'BTC'},
+                         {'label': 'Ethereum (ETH)', 'value': 'ETH'},
+                         {'label': 'Dogecoin (DOGE)', 'value': 'DOGE'},
+                         {'label': 'Litecoin (LTC)', 'value': 'LTC'},
+                         {'label': 'Ripple (XRP)', 'value': 'XRP'}]
+    groups = [
         'Future ROCR',
         'Future NATR',
         'Future ROCR distribution',
@@ -546,7 +550,7 @@ def indicators():
                 html.Tr([
                     html.Th([
                         dcc.Dropdown(id='indicator-coin', className='indicator-dropdown', options=indicator_options,
-                        value='BTC',clearable=False),
+                                     value='BTC', clearable=False), dcc.Loading(html.P(id='indicator-loading-data'))
 
                     ]),
                     html.Th([
@@ -564,10 +568,10 @@ def indicators():
         html.P(id='indicator-description'),
         dcc.Loading(dcc.Graph(id='indicator-correlation')),
         html.H3('Relationship between indicators'),
-        html.H4(id='indicator-comparison-tittle',children='A vs B'),
-        dcc.Graph(id='indicator-regplot'),
-        dcc.Graph(id='indicator-timeplot'),
-        dcc.Store(id='indicator-data',)
+        html.H4(id='indicator-comparison-tittle', children='Click a heatmap cell above to update plots'),
+        dcc.Loading(dcc.Graph(id='indicator-regplot'), ),
+        dcc.Loading(dcc.Graph(id='indicator-timeplot'), ),
+        dcc.Store(id='indicator-data', )
     ])
     return content
 
@@ -872,14 +876,13 @@ def render_page_content(pathname):
 #
 #     return data
 
-@app.callback(Output('indicator-comparison-tittle','children'),
-              Output('indicator-regplot','figure'),
-              Output('indicator-timeplot','figure'),
-              Input('indicator-data','data'),
-              Input('indicator-correlation','clickData'),
-              Input('indicator-group1','value'),
-              Input('indicator-group2','value'),)
-
+@app.callback(Output('indicator-comparison-tittle', 'children'),
+              Output('indicator-regplot', 'figure'),
+              Output('indicator-timeplot', 'figure'),
+              Input('indicator-data', 'data'),
+              Input('indicator-correlation', 'clickData'),
+              Input('indicator-group1', 'value'),
+              Input('indicator-group2', 'value'), )
 def update_indicator_regression(data, clickData, group1, group2):
     if clickData is None:
         raise PreventUpdate
@@ -889,15 +892,15 @@ def update_indicator_regression(data, clickData, group1, group2):
     sel1 = clickData['points'][0]['x']
     sel2 = clickData['points'][0]['y']
     tname = f'{group1}: {sel1} vs {group2}: {sel2}'
-    fig2=go.Figure()
+    fig2 = go.Figure()
     fig2.add_trace(go.Scatter(x=df[(group1, sel1)],
                               y=df[(group2, sel2)],
                               mode='markers',
                               text=df.index,
                               hovertemplate=f"<b>Date</b> : %{{text}}<br><i>{group1} ({sel1})</i>: %{{x}}<br><i>{group2} ({sel2})</i>: %{{y}}",
                               marker=dict(
-                                  color=pd.to_datetime(df.index).view(int), #set color equal to a variable
-                                  colorscale='Viridis', # one of plotly colorscales
+                                  color=pd.to_datetime(df.index).view(int),  # set color equal to a variable
+                                  colorscale='Viridis',  # one of plotly colorscales
                                   showscale=False
                               ),
                               ))
@@ -912,11 +915,11 @@ def update_indicator_regression(data, clickData, group1, group2):
     fig3.add_trace(go.Scatter(x=df.index,
                               y=df[(group1, sel1)],
                               name=f'{group1}: {sel1}',
-                              ),secondary_y=False,)
+                              ), secondary_y=False, )
     fig3.add_trace(go.Scatter(x=df.index,
                               y=df[(group2, sel2)],
                               name=f'{group2}: {sel2}'
-                              ),secondary_y=True,)
+                              ), secondary_y=True, )
     fig3.update_layout(title=tname,
                        xaxis_title=f'Date',
                        yaxis_title=f'{group1}: {sel1}',
@@ -924,30 +927,33 @@ def update_indicator_regression(data, clickData, group1, group2):
                        plot_bgcolor='rgba(0,0,0,0)',
                        )
     fig3.update_yaxes(title_text=f'{group2}: {sel2}', secondary_y=True)
-    return tname,fig2, fig3
+    return tname, fig2, fig3
 
-@app.callback(Output('indicator-data','data'),
-              Input('indicator-coin','value'))
+
+@app.callback(Output('indicator-data', 'data'),
+              Output('indicator-loading-data', 'children'),
+              Input('indicator-coin', 'value'))
 def update_indicator_data(coin):
     df = pd.read_csv(f's3://ds4a-team151/Alldata_{coin}.csv',
                      header=[0, 1], index_col=0)
-    df.columns=[f"{a}<>{b}" for a,b in df.columns]
-    return df.to_json(date_format='iso', orient='split')
+    df.columns = [f"{a}<>{b}" for a, b in df.columns]
+    return df.to_json(date_format='iso', orient='split'), ''
 
-@app.callback(Output('indicator-correlation','figure'),
-              Output('indicator-correlation','style'),
-              Input('indicator-data','data'),
-              Input('indicator-group1','value'),
-              Input('indicator-group2','value'),
+
+@app.callback(Output('indicator-correlation', 'figure'),
+              Output('indicator-correlation', 'style'),
+              Input('indicator-data', 'data'),
+              Input('indicator-group1', 'value'),
+              Input('indicator-group2', 'value'),
               )
-def update_indicator_correlation(data,group1, group2):
+def update_indicator_correlation(data, group1, group2):
     df = pd.read_json(data, orient='split')
     df.columns = pd.MultiIndex.from_tuples([a.split("<>") for a in df.columns])
     group1_cols = [(group1, a) for a in df[group1].columns]
     group2_cols = [(group2, a) for a in df[group2].columns]
-    sel = df.loc[:, group1_cols+group2_cols]
-    corr = sel.corr().loc[group2,group1]
-    corr=corr.dropna(how='all',axis=0).dropna(how='all',axis=1)
+    sel = df.loc[:, group1_cols + group2_cols]
+    corr = sel.corr().loc[group2, group1]
+    corr = corr.dropna(how='all', axis=0).dropna(how='all', axis=1)
     fig = go.Figure()
     fig.add_trace(go.Heatmap(
         y=corr.index,
@@ -956,10 +962,10 @@ def update_indicator_correlation(data,group1, group2):
         hoverongaps=False,
         hovertemplate=f"<b>Correlation</b> :  %{{z:.2f}}<br><i>{group1}</i>: %{{x}}<br><i>{group2}</i>: %{{y}}",
         colorscale='RdBu_r',
-        zmin=-1, zmax=1,))
+        zmin=-1, zmax=1, ))
 
-    heigth=max(len(group2_cols)*20,450)
-    return fig,{'height':f'{heigth}px'}
+    heigth = max(len(group2_cols) * 20, 450)
+    return fig, {'height': f'{heigth}px'}
 
 
 @app.callback(Output('forecast-table', 'data'),

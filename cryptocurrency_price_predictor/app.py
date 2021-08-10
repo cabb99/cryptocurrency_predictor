@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 
 # from scipy.stats import norm
 from scipy.stats import t
+from scipy.stats import linregress
 import numpy as np
 import pandas as pd
 import datetime
@@ -901,9 +902,26 @@ def update_indicator_regression(data, clickData, group1, group2):
                               marker=dict(
                                   color=pd.to_datetime(df.index).view(int),  # set color equal to a variable
                                   colorscale='Viridis',  # one of plotly colorscales
-                                  showscale=False
-                              ),
+                                  showscale=False,
+                              ),showlegend=False
                               ))
+
+    s=df[[(group1, sel1),(group2, sel2)]].dropna()
+    x=s[(group1, sel1)]
+    y=s[(group2, sel2)]
+
+    slope,intercept,r_value,p_value, stderr=linregress(x,y)
+    slope,intercept,r_value,p_value, stderr
+    x_lin=np.linspace(x.min(),x.max(),20)
+    y_lin=x_lin*slope+intercept
+    fig2.add_trace(go.Scatter(x=x_lin,
+                              y=y_lin,
+                              mode='lines',
+                              text=df.index,
+                              hovertemplate=f"<b>R2</b> : {r_value**2}<br><b>R</b> : {r_value}<br><b>Slope</b> : {slope}<br><b>Intercept</b> : {intercept}<br><b>p-value</b> : {p_value}<br>",
+                              showlegend=False
+                              ))
+
     fig2.update_layout(title=tname,
                        xaxis_title=f'{group1}: {sel1}',
                        yaxis_title=f'{group2}: {sel2}',
